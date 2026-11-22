@@ -205,7 +205,7 @@ All entries live in `src/i18n/notation.ts`. That one file is used by the formula
 | E | Teljes energia | E = E_k + E_p. Ha negatív, a golyó a bolygó körül marad; ha nulla vagy pozitív, elszökik. | J | körpályán: E = −E_k |
 | F_cp | Centripetális erő | Az az erő, amely a testet körpályán tartja; itt a gravitációs erő játssza ezt a szerepet. F_cp = m·v²/r | N | körpályán F_cp = F |
 | a_cp | Centripetális gyorsulás | A körpálya középpontja felé mutató gyorsulás. a_cp = v²/r (a füzetben lehet a_c; egy sorban átírható) | m/s² | körpályán a_cp = g(r) |
-| g | Nehézségi gyorsulás | A szabadon eső test gyorsulása a felszínen. g = GM/R² | m/s² | Föld 9,81; Hold 1,62; Mars 3,71 |
+| g | Nehézségi gyorsulás | A szabadon eső test gyorsulása a felszínen. g = GM/R² | m/s² | Föld ≈ 9,8 (a modellben 9,82, mert a bolygó nem forog; a tankönyvi 9,81 a Föld forgását is tartalmazza); Hold 1,62; Mars 3,73 |
 | ε | Fajlagos energia (*Bővebben* only) | Az egy kilogrammra jutó teljes energia: ε = E/m = v²/2 − GM/r. Nem függ a golyó tömegétől, ezért a pálya sem. | J/kg | körpályán a Föld felszínén ≈ −31 MJ/kg |
 | T | Keringési idő | Egy teljes kör megtételéhez szükséges idő. | perc | ISS: ≈ 92,4 perc |
 
