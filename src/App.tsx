@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BODIES, circularSpeed, escapeSpeed } from './physics/bodies';
-import { radius, speed } from './physics/orbitalPhysics';
+import { DEFAULT_PROJECTILE, radius, speed } from './physics/orbitalPhysics';
 import { Camera } from './render/camera';
-import type { SceneLabels } from './render/scene';
+import type { SceneLabels, SceneOptions } from './render/scene';
+import { THEMES, type ThemeId } from './theme/themes';
 import { Simulation, WARP_PRESETS, type LaunchParams, type Warp } from './sim/simulation';
 import { fmt, fmtDistance, fmtDuration, type Lang } from './i18n/format';
 import { LangContext } from './i18n';
@@ -23,11 +24,24 @@ interface Telemetry {
   range: number;
   orbits: number;
   period: number | null;
+  /** Gravitational force on the ball (N). */
+  force: number;
 }
 
 function readTelemetry(sim: Simulation): Telemetry {
   const shot = sim.current;
-  if (!shot) return { t: 0, altitude: sim.params.altitude, speed: 0, status: 'idle', range: 0, orbits: 0, period: null };
+  const forceAt = (r: number) => (sim.body.GM * DEFAULT_PROJECTILE.mass) / (r * r);
+  if (!shot)
+    return {
+      t: 0,
+      altitude: sim.params.altitude,
+      speed: 0,
+      status: 'idle',
+      range: 0,
+      orbits: 0,
+      period: null,
+      force: forceAt(sim.body.radius + sim.params.altitude),
+    };
   const s = shot.flight.state;
   return {
     t: s.t,
@@ -37,6 +51,7 @@ function readTelemetry(sim: Simulation): Telemetry {
     range: Math.abs(shot.flight.swept) * sim.body.radius,
     orbits: shot.flight.orbitsCompleted,
     period: shot.flight.measuredPeriod,
+    force: forceAt(radius(s)),
   };
 }
 
@@ -55,17 +70,30 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [follow, setFollow] = useState(false);
   const [tab, setTab] = useState<Tab>('controls');
+  const [themeId, setThemeId] = useState<ThemeId>(() => {
+    try {
+      return localStorage.getItem('theme') === 'chalk' ? 'chalk' : 'real';
+    } catch {
+      return 'real';
+    }
+  });
+  const [vectors, setVectors] = useState(true);
+  const [components, setComponents] = useState(false);
   const [tele, setTele] = useState<Telemetry>(() => readTelemetry(new Simulation(INITIAL)));
 
   const sim = useMemo(() => new Simulation(INITIAL), []);
   const camera = useMemo(() => new Camera(), []);
   const followRef = useRef(follow);
   followRef.current = follow;
-  const labelsRef = useRef<SceneLabels>({ distance: () => '', heightTag: '' });
-  labelsRef.current = {
+  const heightText = `${fmt(params.altitude / 1000, lang, params.altitude < 10_000 ? 2 : 0)} km`;
+  const labels: SceneLabels = {
     distance: (m) => fmtDistance(m, lang),
-    heightTag: `h = ${fmt(params.altitude / 1000, lang, params.altitude < 10_000 ? 2 : 0)} km`,
+    heightTag: `h = ${heightText}`,
+    caption: { figure: t.figure, text: t.caption(heightText, t.bodiesOn[params.bodyId]) },
   };
+  const options: SceneOptions = { theme: THEMES[themeId], vectors, components };
+  const viewRef = useRef({ labels, options });
+  viewRef.current = { labels, options };
 
   useEffect(() => {
     try {
@@ -76,6 +104,15 @@ export default function App() {
     document.documentElement.lang = lang;
     document.title = t.appTitle;
   }, [lang, t.appTitle]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme', themeId);
+    } catch {
+      /* storage unavailable: fine */
+    }
+    document.documentElement.dataset.theme = themeId;
+  }, [themeId]);
 
   // Telemetry for the UI at 10 Hz (the canvas itself redraws every frame).
   useEffect(() => {
@@ -192,6 +229,8 @@ export default function App() {
       else if (e.key === '0') fitAll();
       else if (e.key.toLowerCase() === 'f') setFollow((v) => !v);
       else if (e.key.toLowerCase() === 'l') setLang((l) => (l === 'hu' ? 'en' : 'hu'));
+      else if (e.key.toLowerCase() === 'v') setVectors((v) => !v);
+      else if (e.key.toLowerCase() === 't') setThemeId((th) => (th === 'real' ? 'chalk' : 'real'));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -217,7 +256,10 @@ export default function App() {
     ['lesson', t.tabLesson],
   ];
   const overlayBtn =
-    'grid h-11 min-w-11 place-items-center rounded-xl border border-slate-700 bg-slate-900/80 px-2 text-lg text-slate-200 backdrop-blur hover:bg-slate-800';
+    'grid h-11 min-w-11 place-items-center rounded-xl border border-(--overlay-line) bg-(--overlay-bg) px-2 text-lg text-(--overlay-ink) backdrop-blur-sm hover:brightness-125 focus-visible:outline-2 focus-visible:outline-(--chip-on-line)';
+  const segBtn = (on: boolean) =>
+    `min-h-9 rounded-lg px-3 text-sm transition-colors ${on ? 'bg-(--overlay-ink) font-semibold text-(--overlay-bg)' : 'text-(--overlay-muted) hover:text-(--overlay-ink)'}`;
+  const fmtForce = (n: number) => (n >= 100 ? fmt(n, lang, 0) : fmt(n, lang, n >= 10 ? 1 : 2));
 
   return (
     <LangContext.Provider value={lang}>
@@ -228,23 +270,33 @@ export default function App() {
             sim={sim}
             camera={camera}
             followRef={followRef}
-            labelsRef={labelsRef}
+            viewRef={viewRef}
             onUserMove={() => setFollow(false)}
             onFirstLayout={() => fitPlanet(false)}
           />
-          <div className="pointer-events-none absolute top-3 left-3 max-w-[calc(100%-6rem)] space-y-1.5">
-            <div className="pointer-events-auto rounded-xl border border-slate-700/70 bg-slate-950/75 px-3 py-1.5 text-xs backdrop-blur sm:py-2 sm:text-sm">
-              <p className="font-medium text-slate-100">{status}</p>
-              {tele.status !== 'idle' && (
-                <p className="mt-0.5 font-mono text-[11px] text-slate-300 sm:text-xs">
-                  <span className="hidden sm:inline">{t.time}: </span>
-                  {fmtDuration(tele.t, lang)} · <span className="hidden sm:inline">{t.height}: </span>h = {fmtDistance(tele.altitude, lang)} ·{' '}
-                  <span className="hidden sm:inline">{t.velocity}: </span>v = {fmt(tele.speed / 1000, lang, 3)} km/s
-                </p>
-              )}
+          <div className="pointer-events-none absolute top-3 left-3 max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-19rem)]">
+            <div className="pointer-events-auto rounded-xl border border-(--overlay-line) bg-(--overlay-bg) px-3.5 py-2 text-(--overlay-ink) backdrop-blur-sm">
+              <p className="text-sm font-semibold sm:text-[15px]">{status}</p>
+              <p className="mt-0.5 text-xs text-(--overlay-muted) sm:text-[13px]">
+                {tele.status !== 'idle' && <>t = {fmtDuration(tele.t, lang)}&ensp;</>}
+                h = {fmtDistance(tele.altitude, lang)}&ensp;
+                {tele.status !== 'idle' && <>v = {fmt(tele.speed / 1000, lang, 3)} km/s&ensp;</>}
+                F = {fmtForce(tele.force)} N
+              </p>
             </div>
           </div>
-          <div className="absolute top-3 right-3 flex gap-2">
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+            <div
+              role="radiogroup"
+              aria-label={t.theme}
+              className="hidden gap-0.5 rounded-xl sm:flex border border-(--overlay-line) bg-(--overlay-bg) p-1 backdrop-blur-sm"
+            >
+              {(['real', 'chalk'] as const).map((id) => (
+                <button key={id} role="radio" aria-checked={themeId === id} className={segBtn(themeId === id)} onClick={() => setThemeId(id)}>
+                  {id === 'real' ? t.themeReal : t.themeChalk}
+                </button>
+              ))}
+            </div>
             <button className={overlayBtn} onClick={() => setLang(lang === 'hu' ? 'en' : 'hu')} aria-label="Language">
               <span className="text-sm font-semibold">{lang === 'hu' ? 'EN' : 'HU'}</span>
             </button>
@@ -260,7 +312,7 @@ export default function App() {
               ⤢
             </button>
             <button
-              className={`${overlayBtn} ${follow ? 'border-sky-400 text-sky-300' : ''}`}
+              className={`${overlayBtn} ${follow ? 'outline-2 outline-(--chip-on-line)' : ''}`}
               onClick={() => setFollow((v) => !v)}
               aria-pressed={follow}
               aria-label={t.follow}
@@ -272,24 +324,26 @@ export default function App() {
         </div>
 
         {/* ── side panel ── */}
-        <aside className="flex h-[48%] min-h-0 flex-col border-t border-slate-800 bg-slate-950/90 lg:h-full lg:w-[35%] lg:border-t-0 lg:border-l">
-          <header className="hidden px-5 pt-4 lg:block">
-            <h1 className="text-lg font-semibold text-sky-300">{t.appTitle}</h1>
+        <aside className="flex h-[48%] min-h-0 flex-col border-t border-(--line) bg-(--panel) lg:h-full lg:w-[35%] lg:border-t-0 lg:border-l">
+          <header className="hidden px-6 pt-5 lg:block">
+            <h1 className="font-math text-[27px] leading-tight">
+              <i>Newton</i> {lang === 'hu' ? 'ágyúgolyója' : 'cannonball'}
+            </h1>
           </header>
-          <nav className="flex gap-1 overflow-x-auto px-3 pt-2 lg:px-4 lg:pt-3" role="tablist">
+          <nav className="flex gap-1 overflow-x-auto border-b border-(--line) px-3 pt-2 lg:px-5 lg:pt-3" role="tablist">
             {tabs.map(([id, label]) => (
               <button
                 key={id}
                 role="tab"
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
-                className={`min-h-11 shrink-0 rounded-t-lg px-3 text-sm font-medium ${tab === id ? 'bg-slate-800 text-sky-200' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`-mb-px min-h-11 shrink-0 border-b-2 px-3 text-sm ${tab === id ? 'border-(--chip-on-line) font-semibold' : 'border-transparent text-(--muted) hover:text-(--ink)'}`}
               >
                 {label}
               </button>
             ))}
           </nav>
-          <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-800 bg-slate-900/40 p-4 lg:p-5">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:px-6 lg:py-5">
             {tab === 'controls' ? (
               <ControlsPanel
                 params={params}
@@ -297,6 +351,12 @@ export default function App() {
                 warp={warp}
                 running={running}
                 hasShot={tele.status !== 'idle'}
+                themeId={themeId}
+                onTheme={setThemeId}
+                vectors={vectors}
+                components={components}
+                onVectors={setVectors}
+                onComponents={setComponents}
                 onParams={setParams}
                 onWarp={setWarp}
                 onFire={fire}
@@ -304,7 +364,7 @@ export default function App() {
                 onClear={clear}
               />
             ) : (
-              <p className="text-sm text-slate-400">{t.comingSoon}</p>
+              <p className="text-sm text-(--muted)">{t.comingSoon}</p>
             )}
           </div>
         </aside>

@@ -1,17 +1,62 @@
 @import 'tailwindcss';
 
-:root {
+/*
+ * Theme tokens (PLAN.md §10). The canvas reads the same values from src/theme/themes.ts.
+ * Components use them through Tailwind arbitrary values, e.g. bg-(--panel).
+ */
+:root,
+[data-theme='real'] {
   color-scheme: dark;
-  --space: #060b19;
-  --vel: #38bdf8;
-  --grav: #fb7185;
-  --grav-glow: #f59e0b;
+  --page: #081221;
+  --panel: #0f1b2e;
+  --ink: #e8e4d8;
+  --muted: #9aa5b5;
+  --line: #2a3a52;
+  --chip-on: rgba(124, 208, 255, 0.14);
+  --chip-on-line: #7cd0ff;
+  --chip-on-ink: #f1f5f9;
+  --control: #7cd0ff;
+  --fire: #e8b44c;
+  --fire-hover: #f0c262;
+  --fire-ink: #0b1626;
+  --overlay-bg: rgba(8, 18, 33, 0.82);
+  --overlay-ink: #e8e4d8;
+  --overlay-muted: #a9b3c2;
+  --overlay-line: #2a3a52;
+  --font-ui: 'Instrument Sans', system-ui, sans-serif;
+  --font-math: 'Newsreader', 'Times New Roman', serif;
+}
+
+[data-theme='chalk'] {
+  color-scheme: light;
+  --page: #25362e;
+  --panel: #f2f1ec;
+  --ink: #1f2a24;
+  --muted: #5a6359;
+  --line: #cfcdc3;
+  --chip-on: #e4ece6;
+  --chip-on-line: #2f6b4f;
+  --chip-on-ink: #1f2a24;
+  --control: #2f6b4f;
+  --fire: #2f6b4f;
+  --fire-hover: #3a7d5d;
+  --fire-ink: #ffffff;
+  --overlay-bg: rgba(37, 54, 46, 0.92);
+  --overlay-ink: #eeede5;
+  --overlay-muted: #c8cbbf;
+  --overlay-line: rgba(238, 237, 229, 0.45);
 }
 
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--space);
-  color: #e2e8f0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.font-math { font-family: var(--font-math); }
+input[type='range'] { accent-color: var(--control); }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
 }

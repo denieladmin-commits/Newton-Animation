@@ -48,7 +48,20 @@ const hu = {
     elliptical: 'Ellipszispálya',
     escape: 'Elszökik',
   },
-  shortcuts: 'Szóköz: lejátszás/szünet · Enter: tűz · 1–5: sebesség · +/−: nagyítás',
+  shortcuts: 'Szóköz: lejátszás/szünet, Enter: tűz, 1–5: sebesség, +/−: nagyítás, V: vektorok, T: stílus',
+  theme: 'Stílus',
+  themeReal: 'Valósághű',
+  themeChalk: 'Tábla',
+  vectors: 'Vektorok',
+  vectorsShow: 'Sebesség és erő',
+  components: 'Összetevők',
+  componentsHint: 'radiális és tangenciális sebesség',
+  force: 'Erő',
+  figure: '1. ábra.',
+  bodiesOn: { earth: 'a Földön', moon: 'a Holdon', mars: 'a Marson' } satisfies Record<BodyId, string>,
+  caption: (h: string, on: string) => `Ágyú egy ${h} magas hegyen ${on}; valódi méretarány.`,
+  on: 'Be',
+  off: 'Ki',
 };
 
 export type Strings = typeof hu;
@@ -100,7 +113,20 @@ const en: Strings = {
     elliptical: 'Elliptical orbit',
     escape: 'Escapes',
   },
-  shortcuts: 'Space: play/pause · Enter: fire · 1–5: speed · +/−: zoom',
+  shortcuts: 'Space: play/pause, Enter: fire, 1–5: speed, +/−: zoom, V: vectors, T: style',
+  theme: 'Style',
+  themeReal: 'Realistic',
+  themeChalk: 'Chalkboard',
+  vectors: 'Vectors',
+  vectorsShow: 'Velocity and force',
+  components: 'Components',
+  componentsHint: 'radial and tangential velocity',
+  force: 'Force',
+  figure: 'Fig. 1.',
+  bodiesOn: { earth: 'on Earth', moon: 'on the Moon', mars: 'on Mars' },
+  caption: (h, on) => `A cannon on a ${h} high mountain ${on}; true scale.`,
+  on: 'On',
+  off: 'Off',
 };
 
 export const STRINGS: Record<Lang, Strings> = { hu, en };

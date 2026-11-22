@@ -46,3 +46,7 @@ in the browser and show them in Hungarian.*
 | 19 | v_r and v_t combine exactly to v | — | 10⁻⁹ (random states) |
 | 20 | 90° marker: always on in a circular orbit; on an ellipse only at periapsis/apoapsis | — | ±0,5° |
 | 21 | 150 random launches (planet, height 1–1000 km, speed 0–1,4·v₂) | no NaN; energy conserved; crash/orbit/escape as predicted | — |
+| 22 | Vector overlay at launch: v⃗ horizontal, F⃗ straight down, 90° marker on | exact | 10⁻¹² |
+| 23 | Arrow lengths: v⃗ ∝ speed (90 px at v₁), F⃗ ∝ 1/r² (72 px at launch) | proportional | 10⁻⁹ |
+| 24 | Drawn components v_r + v_t add up to v⃗ (in pixels) | exact | 10⁻⁹ |
+| 25 | Force readout: 10 kg ball at 0 / 8,85 / 400 km | 98,2 / 97,9 / 86,9 N | 0,05 N |

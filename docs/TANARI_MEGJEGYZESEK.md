@@ -102,3 +102,23 @@ A program a negyedrendű Runge–Kutta (RK4) módszerrel számol. Ellenőrzésk�
 
 **23. Honnan származnak az állandók?**
 A NASA bolygó-adatlapjairól (Planetary Fact Sheets): GM, átlagos sugár, a légkör sűrűsége és skálamagassága. A G értéke CODATA 2018.
+
+## Vektorok és megjelenítés
+
+**24. Mekkorák a nyilak? Méretarányosak?**
+A nyilak hossza képpontban (pixelben) van megadva, nem kilométerben, ezért nagyításkor nem változik. A sebességnyíl (v⃗) 90 képpont, ha a golyó éppen a kilövési magassághoz tartozó első kozmikus sebességgel (v₁) halad, és ezzel arányosan hosszabb vagy rövidebb. Az erőnyíl (F⃗) a kilövéskor 72 képpont, és a távolság négyzetével fordítottan arányosan rövidül. A két nyíl hosszát egymással nem érdemes összevetni, mert más mennyiséget mutatnak (m/s és N); a pontos értékek a bal felső sarokban láthatók.
+
+**25. Miért mutat mindig a bolygó középpontja felé az erőnyíl?**
+A gravitációs erő centrális erő: mindig a két test középpontját összekötő egyenes mentén hat. A szaggatott vonal a golyótól a bolygó középpontjáig ezt mutatja. (Ellenőrizve: az irány eltérése kisebb, mint 0,01°.)
+
+**26. Mikor jelenik meg a derékszög jele?**
+Ha a sebesség és a gravitációs erő ±0,5°-on belül merőleges egymásra. Körpályán ez végig így van, ezért a jel végig látszik. Ellipszispályán csak a bolygóhoz legközelebbi és legtávolabbi pontban, kilövéskor pedig mindig, mert a lövés vízszintes.
+
+**27. Mit jelentenek az összetevők (v_r, v_t)?**
+A sebességet két merőleges részre bontjuk: a radiális (sugárirányú) v_r megmutatja, hogy a golyó távolodik-e a bolygótól (kifelé mutat) vagy közeledik hozzá (befelé mutat). A tangenciális (érintőirányú) v_t a pálya menti „körbehaladást” mutatja. Körpályán v_r = 0. Ellipszispályán, amíg a golyó távolodik, v_r kifelé mutat, és a gravitáció lassítja; a legtávolabbi ponton v_r = 0.
+
+**28. Az ISS-en súlytalanság van. Akkor ott nincs gravitáció?**
+Van, és nem is sokkal kisebb: 400 km magasan a 10 kg-os golyóra 86,9 N hat, a felszíni 98,2 N kb. 89 %-a. Ez jól látszik az alkalmazásban is (F = 86,9 N). A súlytalanság oka, hogy az ISS és benne minden folyamatosan szabadon esik a Föld körül (lásd a 17. kérdést), ezért semmi sem nyomja a padlót.
+
+**29. Miért van két megjelenés (Valósághű és Tábla)?**
+A fizika mindkettőben ugyanaz, csak a rajz más. A Valósághű a látványosabb, sötétített teremben ajánlott. A Tábla krétarajzra hasonlít, Newton 1728-as rézmetszetének vonalkázásával; világos teremben, kivetítőn is jól olvasható. A váltó a kép jobb felső sarkában van (telefonon a Vezérlés fül alján), a T billentyű is vált.

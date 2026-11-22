@@ -3,6 +3,7 @@ import { classifyTrajectory } from '../physics/orbitalElements';
 import { fmt } from '../i18n/format';
 import { useLang, useT } from '../i18n';
 import { WARP_PRESETS, type LaunchParams, type Warp } from '../sim/simulation';
+import type { ThemeId } from '../theme/themes';
 
 export type SpeedSnap = 'free' | 'v1' | 'v2';
 
@@ -33,6 +34,12 @@ interface Props {
   warp: Warp;
   running: boolean;
   hasShot: boolean;
+  themeId: ThemeId;
+  onTheme: (id: ThemeId) => void;
+  vectors: boolean;
+  components: boolean;
+  onVectors: (on: boolean) => void;
+  onComponents: (on: boolean) => void;
   onParams: (p: Partial<LaunchParams>, snap?: SpeedSnap) => void;
   onWarp: (w: Warp) => void;
   onFire: () => void;
@@ -41,15 +48,15 @@ interface Props {
 }
 
 const btn =
-  'min-h-11 rounded-xl px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-sky-400 disabled:opacity-40';
+  'min-h-11 rounded-lg px-3 text-[15px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--chip-on-line) disabled:opacity-40';
 const chip = (active: boolean) =>
-  `${btn} border ${active ? 'border-sky-400 bg-sky-500/20 text-sky-100' : 'border-slate-700 bg-slate-800/60 text-slate-300 hover:bg-slate-700/60'}`;
+  `${btn} border ${active ? 'border-(--chip-on-line) bg-(--chip-on) font-semibold text-(--chip-on-ink)' : 'border-(--line) text-(--muted) hover:text-(--ink)'}`;
 
 function Section({ title, children, aside }: { title: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
     <section className="space-y-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">{title}</h3>
+        <h3 className="text-[15px] font-semibold">{title}</h3>
         {aside}
       </div>
       {children}
@@ -73,8 +80,8 @@ export function ControlsPanel(props: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-[1fr_auto] gap-2">
-        <button onClick={props.onFire} className={`${btn} bg-amber-500 text-base font-semibold text-slate-950 hover:bg-amber-400`}>
-          🔥 {t.fire}
+        <button onClick={props.onFire} className={`${btn} min-h-12 bg-(--fire) text-base font-bold text-(--fire-ink) hover:bg-(--fire-hover)`}>
+          {t.fire}
         </button>
         <button onClick={props.onTogglePlay} disabled={!hasShot} className={chip(false)} aria-label={running ? t.pause : t.play}>
           {running ? '⏸' : '▶'} <span className="ml-1 hidden sm:inline">{running ? t.pause : t.play}</span>
@@ -91,7 +98,7 @@ export function ControlsPanel(props: Props) {
         </div>
       </Section>
 
-      <Section title={t.altitude} aside={<span className="font-mono text-sm text-slate-200">h = {fmt(params.altitude / 1000, lang, params.altitude < 10_000 ? 2 : 0)} km</span>}>
+      <Section title={t.altitude} aside={<span className="text-[15px]">h = {fmt(params.altitude / 1000, lang, params.altitude < 10_000 ? 2 : 0)} km</span>}>
         <input
           type="range"
           min={0}
@@ -99,14 +106,14 @@ export function ControlsPanel(props: Props) {
           step={1}
           value={altToSlider(params.altitude)}
           onChange={(e) => props.onParams({ altitude: sliderToAlt(Number(e.target.value)) })}
-          className="w-full accent-sky-400"
+          className="w-full"
           aria-label={t.altitude}
         />
         <div className="grid grid-cols-3 gap-2">
           {ALT_PRESETS.map((p) => (
             <button key={p.key} className={chip(params.altitude === p.h)} onClick={() => props.onParams({ altitude: p.h })}>
               <span className="block leading-tight">{t[p.key]}</span>
-              <span className="block text-xs text-slate-400">{fmt(p.h / 1000, lang, p.h < 10_000 ? 2 : 0)} km</span>
+              <span className="block text-xs text-(--muted)">{fmt(p.h / 1000, lang, p.h < 10_000 ? 2 : 0)} km</span>
             </button>
           ))}
         </div>
@@ -115,8 +122,8 @@ export function ControlsPanel(props: Props) {
       <Section
         title={t.launchSpeed}
         aside={
-          <span className="font-mono text-sm text-slate-200">
-            v₀ = {kmh(params.v0)} km/s <span className="text-slate-400">= {fmt(params.v0 / v1, lang, 3)}·v₁</span>
+          <span className="text-[15px]">
+            v₀ = {kmh(params.v0)} km/s <span className="text-(--muted)">= {fmt(params.v0 / v1, lang, 3)}·v₁</span>
           </span>
         }
       >
@@ -127,7 +134,7 @@ export function ControlsPanel(props: Props) {
           step={1}
           value={params.v0}
           onChange={(e) => props.onParams({ v0: Number(e.target.value) }, 'free')}
-          className="w-full accent-sky-400"
+          className="w-full"
           aria-label={t.launchSpeed}
         />
         <div className="grid grid-cols-2 gap-2">
@@ -143,7 +150,7 @@ export function ControlsPanel(props: Props) {
             {[-100, -10, 10, 100].map((d) => (
               <button
                 key={d}
-                className={`${chip(false)} min-w-11 px-2 font-mono text-xs`}
+                className={`${chip(false)} min-w-11 px-2 text-sm`}
                 onClick={() => props.onParams({ v0: Math.min(vMax, Math.max(0, params.v0 + d)) }, 'free')}
               >
                 {d > 0 ? '+' : '−'}
@@ -151,9 +158,9 @@ export function ControlsPanel(props: Props) {
               </button>
             ))}
           </div>
-          <span className="text-xs text-slate-500">m/s</span>
+          <span className="text-sm text-(--muted)">m/s</span>
         </div>
-        <p className="rounded-lg bg-slate-800/50 px-3 py-2 text-sm text-slate-300">
+        <p className="border-l-2 border-(--chip-on-line) py-1 pl-3 text-[15px]">
           {dragMatters ? `${t.drag}: ${t.kinds.suborbital}` : t.kinds[kind]}
         </p>
       </Section>
@@ -167,24 +174,57 @@ export function ControlsPanel(props: Props) {
             {t.dragOn}
           </button>
         </div>
-        <p className="text-xs text-slate-500">{body.atmosphere ? t.dragNote : t.dragNoAtmosphere}</p>
+        <p className="text-sm text-(--muted)">{body.atmosphere ? t.dragNote : t.dragNoAtmosphere}</p>
+      </Section>
+
+      <Section title={t.vectors}>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={chip(props.vectors)} aria-pressed={props.vectors} onClick={() => props.onVectors(!props.vectors)}>
+            {t.vectorsShow}
+          </button>
+          <button
+            className={chip(props.vectors && props.components)}
+            aria-pressed={props.components}
+            disabled={!props.vectors}
+            onClick={() => props.onComponents(!props.components)}
+          >
+            {t.components}
+          </button>
+        </div>
+        <p className="text-sm text-(--muted)">
+          <span className="font-math italic">v</span><sub className="font-math italic">r</sub>,{' '}
+          <span className="font-math italic">v</span><sub className="font-math italic">t</sub>: {t.componentsHint}
+        </p>
       </Section>
 
       <Section title={t.speed}>
         <div className="grid grid-cols-5 gap-1.5">
           {WARP_PRESETS.map((w, i) => (
-            <button key={w} className={`${chip(warp === w)} px-1 font-mono`} onClick={() => props.onWarp(w)} title={`${i + 1}`}>
+            <button key={w} className={`${chip(warp === w)} px-1`} onClick={() => props.onWarp(w)} title={`${i + 1}`}>
               {fmt(w, lang, 0)}×
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-500">1× = {t.realTime}</p>
+        <p className="text-sm text-(--muted)">1× = {t.realTime}</p>
       </Section>
+
+      {/* On phones the style switch lives here instead of on the canvas. */}
+      <div className="sm:hidden">
+        <Section title={t.theme}>
+          <div className="grid grid-cols-2 gap-2">
+            {(['real', 'chalk'] as const).map((id) => (
+              <button key={id} className={chip(props.themeId === id)} aria-pressed={props.themeId === id} onClick={() => props.onTheme(id)}>
+                {id === 'real' ? t.themeReal : t.themeChalk}
+              </button>
+            ))}
+          </div>
+        </Section>
+      </div>
 
       <button onClick={props.onClear} disabled={!hasShot} className={`${chip(false)} w-full`}>
         {t.clearShots}
       </button>
-      <p className="hidden text-xs text-slate-500 lg:block">{t.shortcuts}</p>
+      <p className="hidden text-sm text-(--muted) lg:block">{t.shortcuts}</p>
     </div>
   );
 }

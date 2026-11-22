@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Camera } from '../render/camera';
-import { drawScene, type SceneLabels } from '../render/scene';
+import { drawScene, type SceneLabels, type SceneOptions } from '../render/scene';
 import type { Simulation } from '../sim/simulation';
 
 interface Props {
@@ -8,13 +8,13 @@ interface Props {
   camera: Camera;
   /** Read every frame, so it can change without re-subscribing. */
   followRef: React.RefObject<boolean>;
-  labelsRef: React.RefObject<SceneLabels>;
+  viewRef: React.RefObject<{ labels: SceneLabels; options: SceneOptions }>;
   onUserMove: () => void;
   onFirstLayout: () => void;
 }
 
 /** Canvas + animation loop + mouse/touch camera control. */
-export function CanvasView({ sim, camera, followRef, labelsRef, onUserMove, onFirstLayout }: Props) {
+export function CanvasView({ sim, camera, followRef, viewRef, onUserMove, onFirstLayout }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cb = useRef({ onUserMove, onFirstLayout });
   cb.current = { onUserMove, onFirstLayout };
@@ -50,7 +50,8 @@ export function CanvasView({ sim, camera, followRef, labelsRef, onUserMove, onFi
       const shot = sim.current;
       const follow = followRef.current && shot ? shot.flight.state : undefined;
       camera.update(dt, follow);
-      drawScene(ctx, camera, sim, labelsRef.current!);
+      const view = viewRef.current!;
+      drawScene(ctx, camera, sim, view.labels, view.options);
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -118,7 +119,7 @@ export function CanvasView({ sim, camera, followRef, labelsRef, onUserMove, onFi
       canvas.removeEventListener('pointercancel', up);
       canvas.removeEventListener('wheel', wheel);
     };
-  }, [sim, camera, followRef, labelsRef]);
+  }, [sim, camera, followRef, viewRef]);
 
   return <canvas ref={canvasRef} className="block h-full w-full touch-none select-none" />;
 }

@@ -23,13 +23,33 @@ export interface PlanetStyle {
 }
 
 export const PLANET_STYLE: Record<BodyId, PlanetStyle> = {
-  earth: { base: '#1d4f91', dark: '#0b2142', ground: '#3d6b45', groundDark: '#1f3a26', glow: [96, 165, 250] },
+  earth: { base: '#1c4f8a', dark: '#0b2346', ground: '#4d6e43', groundDark: '#24361f', glow: [143, 208, 255] },
   moon: { base: '#9ca3af', dark: '#4b5563', ground: '#8b8f96', groundDark: '#4a4d52', glow: null },
   mars: { base: '#c2410c', dark: '#5b1d07', ground: '#a8481f', groundDark: '#5e2511', glow: [251, 146, 60] },
 };
 
 const SIZE = 1024;
 const cache = new Map<BodyId, HTMLCanvasElement>();
+
+/** Organic closed coastline: a smooth curve through points with seeded radius noise. */
+function coast(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, stretch: number, seed: number, n = 16) {
+  const rnd = mulberry32(seed);
+  const pts = Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    const rr = r * (0.78 + rnd() * 0.34);
+    return [cx + Math.cos(a) * rr * stretch, cy + Math.sin(a) * rr] as const;
+  });
+  const mid = (a: readonly [number, number], b: readonly [number, number]) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] as const;
+  ctx.beginPath();
+  const start = mid(pts[n - 1]!, pts[0]!);
+  ctx.moveTo(start[0], start[1]);
+  for (let i = 0; i < n; i++) {
+    const p = pts[i]!;
+    const q = mid(p, pts[(i + 1) % n]!);
+    ctx.quadraticCurveTo(p[0], p[1], q[0], q[1]);
+  }
+  ctx.closePath();
+}
 
 /** Blob made of overlapping circles along a random walk (continents, maria, dark regions). */
 function blob(ctx: CanvasRenderingContext2D, rnd: () => number, x: number, y: number, size: number, steps: number) {
@@ -61,25 +81,51 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
   ctx.fillRect(0, 0, SIZE, SIZE);
 
   if (id === 'earth') {
-    const land = ['#2f6b3a', '#3f7d3f', '#6b6a3a', '#7a6a45'];
-    for (let k = 0; k < 7; k++) {
-      ctx.fillStyle = land[k % land.length]!;
-      ctx.globalAlpha = 0.9;
-      blob(ctx, rnd, rnd() * SIZE, SIZE * 0.15 + rnd() * SIZE * 0.7, 40 + rnd() * 50, 30);
-    }
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#e8f1fb';
-    ctx.beginPath();
-    ctx.ellipse(R, 0, R * 0.55, SIZE * 0.07, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(R, SIZE, R * 0.6, SIZE * 0.06, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    for (let k = 0; k < 40; k++) {
-      ctx.beginPath();
-      ctx.ellipse(rnd() * SIZE, rnd() * SIZE, 30 + rnd() * 90, 6 + rnd() * 10, (rnd() - 0.5) * 0.6, 0, Math.PI * 2);
+    // Ocean depth variation
+    const deep = ctx.createRadialGradient(R * 0.7, R * 0.6, R * 0.1, R, R, R);
+    deep.addColorStop(0, 'rgba(70,140,200,0.35)');
+    deep.addColorStop(1, 'rgba(5,20,45,0.35)');
+    ctx.fillStyle = deep;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    // Continents: organic coastlines with drier interiors
+    const continents: [number, number, number, number][] = [
+      [0.22, 0.42, 0.17, 1.3], [0.3, 0.72, 0.12, 0.8], [0.62, 0.3, 0.13, 1.1],
+      [0.7, 0.58, 0.16, 0.9], [0.86, 0.78, 0.08, 1.2], [0.45, 0.52, 0.05, 1.5],
+    ];
+    continents.forEach(([cx, cy, r, stretch], i) => {
+      ctx.fillStyle = ['#4d6e43', '#557a49', '#5e7347', '#4f7246'][i % 4]!;
+      ctx.strokeStyle = 'rgba(210,230,210,0.18)';
+      ctx.lineWidth = 2;
+      coast(ctx, cx * SIZE, cy * SIZE, r * SIZE, stretch, 101 + i * 17);
       ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = i % 2 ? 'rgba(166,143,94,0.75)' : 'rgba(140,125,85,0.6)';
+      coast(ctx, cx * SIZE + r * SIZE * 0.15, cy * SIZE + r * SIZE * 0.1, r * SIZE * 0.32, stretch * 1.2, 7 + i);
+      ctx.fill();
+    });
+    // Small polar ice caps
+    ctx.fillStyle = '#eef5fb';
+    coast(ctx, R, SIZE * 0.012, SIZE * 0.035, 2.6, 5);
+    ctx.fill();
+    coast(ctx, R, SIZE * 0.99, SIZE * 0.04, 2.8, 9);
+    ctx.fill();
+    // Soft cloud bands
+    for (let k = 0; k < 34; k++) {
+      const x = rnd() * SIZE;
+      const y = rnd() * SIZE;
+      const w = 40 + rnd() * 110;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, w);
+      g.addColorStop(0, 'rgba(255,255,255,0.42)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(1, 0.12 + rnd() * 0.1);
+      ctx.translate(-x, -y);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, w, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
   } else if (id === 'moon') {
     ctx.fillStyle = 'rgba(55,60,70,0.45)';
@@ -116,8 +162,8 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
   const light = ctx.createRadialGradient(R * 0.55, R * 0.5, R * 0.1, R, R, R * 1.05);
   light.addColorStop(0, 'rgba(255,255,255,0.18)');
   light.addColorStop(0.5, 'rgba(0,0,0,0)');
-  light.addColorStop(0.85, 'rgba(0,0,0,0.35)');
-  light.addColorStop(1, 'rgba(0,0,0,0.7)');
+  light.addColorStop(0.8, 'rgba(0,0,0,0.38)');
+  light.addColorStop(1, 'rgba(2,8,20,0.78)');
   ctx.fillStyle = light;
   ctx.fillRect(0, 0, SIZE, SIZE);
   ctx.restore();
