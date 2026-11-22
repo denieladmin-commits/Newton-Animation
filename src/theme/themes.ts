@@ -40,6 +40,8 @@ export interface Theme {
   trailWidth: number;
   vectorWidth: number;
   arrowHead: number;
+  /** Multiplier for letters and arrow lengths (presentation mode makes everything larger). */
+  textScale?: number;
 }
 
 const MATH = '"Newsreader", "Times New Roman", serif';

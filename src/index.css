@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Phones held sideways: picture and panel side by side. */
+@custom-variant phone-land (@media (orientation: landscape) and (max-height: 540px));
+
 /*
  * Theme tokens (PLAN.md §10). The canvas reads the same values from src/theme/themes.ts.
  * Components use them through Tailwind arbitrary values, e.g. bg-(--panel).

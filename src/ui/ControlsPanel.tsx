@@ -115,7 +115,16 @@ export function ControlsPanel(props: Props) {
         <div className="grid grid-cols-3 gap-2">
           {ALT_PRESETS.map((p) => (
             <button key={p.key} className={chip(params.altitude === p.h)} onClick={() => props.onParams({ altitude: p.h })}>
-              <span className="block leading-tight">{t[p.key]}</span>
+              <span className="block leading-tight">
+                {p.key === 'presetKarman' ? (
+                  <>
+                    <span className="sm:hidden">{t.presetKarmanShort}</span>
+                    <span className="hidden sm:inline">{t[p.key]}</span>
+                  </>
+                ) : (
+                  t[p.key]
+                )}
+              </span>
               <span className="block text-xs text-(--muted)">{fmt(p.h / 1000, lang, p.h < 10_000 ? 2 : 0)} km</span>
             </button>
           ))}
@@ -231,7 +240,6 @@ export function ControlsPanel(props: Props) {
       <button onClick={props.onClear} disabled={!hasShot} className={`${chip(false)} w-full`}>
         {t.clearShots}
       </button>
-      <p className="hidden text-sm text-(--muted) lg:block">{t.shortcuts}</p>
     </div>
   );
 }

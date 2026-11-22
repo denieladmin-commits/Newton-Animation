@@ -37,7 +37,7 @@ export interface VectorLayout {
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 /** Pure geometry for the vector overlay (unit-tested). `r0` is the launch distance. */
-export function vectorLayout(s: State, body: Body, r0: number): VectorLayout {
+export function vectorLayout(s: State, body: Body, r0: number, px = 1): VectorLayout {
   const r = Math.hypot(s.x, s.y);
   const speed = Math.hypot(s.vx, s.vy);
   const radial = { x: s.x / r, y: -s.y / r };
@@ -47,8 +47,8 @@ export function vectorLayout(s: State, body: Body, r0: number): VectorLayout {
   const tangent = { x: -radial.y * -sign, y: radial.x * -sign };
   const v = speed > 0 ? { x: s.vx / speed, y: -s.vy / speed } : tangent;
   const vRef = circularSpeed(body, r0);
-  const vLen = speed > 0 ? clamp((V_REF_PX * speed) / vRef, MIN_PX, MAX_V_PX) : 0;
-  const fLen = clamp(F_REF_PX * (r0 / r) ** 2, MIN_PX, MAX_F_PX);
+  const vLen = speed > 0 ? clamp((px * V_REF_PX * speed) / vRef, px * MIN_PX, px * MAX_V_PX) : 0;
+  const fLen = clamp(px * F_REF_PX * (r0 / r) ** 2, px * MIN_PX, px * MAX_F_PX);
   const vr = (s.x * s.vx + s.y * s.vy) / r;
   const vt = Math.abs(h) / r;
   const k = speed > 0 ? vLen / speed : 0;
@@ -72,9 +72,9 @@ export interface VectorOptions {
 }
 
 /** Drag arrow length (px): same scale as F⃗, so the two can be compared directly. */
-export function dragArrowLength(dragAccel: number, body: Body, r0: number): number {
+export function dragArrowLength(dragAccel: number, body: Body, r0: number, px = 1): number {
   const g0 = body.GM / (r0 * r0);
-  return Math.min(MAX_F_PX * 1.4, Math.max(MIN_PX, (F_REF_PX * dragAccel) / g0));
+  return px * Math.min(MAX_F_PX * 1.4, Math.max(MIN_PX, (F_REF_PX * dragAccel) / g0));
 }
 
 export function drawVectors(
@@ -86,7 +86,8 @@ export function drawVectors(
   theme: Theme,
   opts: VectorOptions,
 ) {
-  const L = vectorLayout(s, body, r0);
+  const ts = theme.textScale ?? 1;
+  const L = vectorLayout(s, body, r0, ts);
   const bx = cam.toScreenX(s.x);
   const by = cam.toScreenY(s.y);
   const t = theme;
@@ -132,7 +133,7 @@ export function drawVectors(
     }
     ctx.globalAlpha = 1;
     // Labels sit beside the middle of each component, on the side away from v⃗.
-    const size = 17;
+    const size = 17 * ts;
     const side = L.vrLen >= 0 ? -1 : 1;
     if (L.vtLen > 18) {
       const mx = bx + L.tangent.x * L.vtLen * 0.55 + L.radial.x * side * 16;
@@ -157,12 +158,12 @@ export function drawVectors(
     if (ad > 0.01 * (body.GM / (r * r))) {
       const dx = opts.drag.x / ad;
       const dy = -opts.drag.y / ad;
-      const len = dragArrowLength(ad, body, r0);
+      const len = dragArrowLength(ad, body, r0, ts);
       const dragColor = theme.drag;
       arrow(ctx, bx, by, dx, dy, len, dragColor, t.vectorWidth, t.arrowHead);
       const px = bx + dx * (len + 14);
       const py = by + dy * (len + 14);
-      mathLetter(ctx, px - (dx < 0 ? 22 : 2), py + (dy > 0 ? 18 : 4), 'F', dragColor, t.fontMath, 24, { vector: true, sub: 'd', halo: t.halo });
+      mathLetter(ctx, px - (dx < 0 ? 22 : 2), py + (dy > 0 ? 18 : 4), 'F', dragColor, t.fontMath, 24 * ts, { vector: true, sub: 'd', halo: t.halo });
     }
   }
 
@@ -183,7 +184,7 @@ export function drawVectors(
   }
 
   // Letters at the arrow tips, pushed away from the arrow so they never overlap it.
-  const size = 24;
+  const size = 24 * ts;
   const place = (dx: number, dy: number, len: number) => {
     const px = bx + dx * (len + 14);
     const py = by + dy * (len + 14);

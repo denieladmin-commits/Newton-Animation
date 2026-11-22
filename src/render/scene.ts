@@ -394,22 +394,35 @@ function drawTrail(ctx: CanvasRenderingContext2D, cam: Camera, shot: Shot, curre
   ctx.globalAlpha = 1;
 }
 
-/** Italic letter (A, B, C…) at the end of a shot, like Newton's figure. */
-function drawShotLabel(ctx: CanvasRenderingContext2D, cam: Camera, shot: Shot, t: Painted) {
+/** Occupied screen spots: centre and half-size (px). */
+type Placed = { x: number; y: number; w?: number; h?: number };
+
+/**
+ * Italic letter (A, B, C…) at the end of a shot, like Newton's figure.
+ * Letters already placed this frame are avoided by moving further out along the
+ * radius; if there is no free spot nearby the letter is left out (the dot stays).
+ */
+function drawShotLabel(ctx: CanvasRenderingContext2D, cam: Camera, shot: Shot, t: Painted, placed: Placed[]) {
   const n = shot.trail.length;
   const end = { x: shot.trail.xs[n - 1]!, y: shot.trail.ys[n - 1]! };
   const r = Math.hypot(end.x, end.y);
-  const off = 18 / cam.scale;
-  const x = cam.toScreenX(end.x + (end.x / r) * off);
-  const y = cam.toScreenY(end.y + (end.y / r) * off);
-  if (x < -40 || y < -40 || x > cam.width + 40 || y > cam.height + 40) return;
+  const k = t.textScale ?? 1;
   if (shot.flight.status === 'crashed') {
     ctx.fillStyle = t.ghost;
     ctx.beginPath();
     ctx.arc(cam.toScreenX(end.x), cam.toScreenY(end.y), 2.8, 0, Math.PI * 2);
     ctx.fill();
   }
-  mathLetter(ctx, x - 6, y + 7, shot.label, t.ghostLetter, t.fontMath, 20, { halo: t.halo });
+  for (const step of [18, 36, 54, 72, 90]) {
+    const off = (step * k) / cam.scale;
+    const x = cam.toScreenX(end.x + (end.x / r) * off);
+    const y = cam.toScreenY(end.y + (end.y / r) * off);
+    if (x < -40 || y < -40 || x > cam.width + 40 || y > cam.height + 40) return;
+    if (placed.some((p) => Math.abs(p.x - x) < (p.w ?? 18 * k) && Math.abs(p.y - y) < (p.h ?? 18 * k))) continue;
+    placed.push({ x, y });
+    mathLetter(ctx, x - 6, y + 7, shot.label, t.ghostLetter, t.fontMath, 20 * k, { halo: t.halo });
+    return;
+  }
 }
 
 // ─────────────────────────────── cannon & ball ───────────────────────────────
@@ -460,7 +473,7 @@ function drawScaleBar(ctx: CanvasRenderingContext2D, cam: Camera, label: (m: num
   ctx.lineTo(x + px, y - 5);
   ctx.stroke();
   ctx.fillStyle = t.ink;
-  ctx.font = `13px ${t.fontUi}`;
+  ctx.font = `${13 * (t.textScale ?? 1)}px ${t.fontUi}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
   ctx.fillText(label(meters), x, y - 7);
@@ -472,12 +485,12 @@ function drawCaption(ctx: CanvasRenderingContext2D, cam: Camera, caption: SceneL
   ctx.textBaseline = 'alphabetic';
   ctx.globalAlpha = 0.85;
   ctx.fillStyle = t.ink;
-  ctx.font = `italic 15px ${t.fontMath}`;
+  ctx.font = `italic ${15 * (t.textScale ?? 1)}px ${t.fontMath}`;
   const x = 18 + inset;
   const y = cam.height - 16 - inset;
   ctx.fillText(caption.figure, x, y);
   const w = ctx.measureText(caption.figure + ' ').width;
-  ctx.font = `15px ${t.fontMath}`;
+  ctx.font = `${15 * (t.textScale ?? 1)}px ${t.fontMath}`;
   ctx.fillText(caption.text, x + w, y);
   ctx.globalAlpha = 1;
 }
@@ -493,6 +506,8 @@ export interface SceneOptions {
   theme: Theme;
   vectors: boolean;
   components: boolean;
+  /** 1 normally; larger in presentation mode (letters, arrows, line widths). */
+  scale?: number;
 }
 
 // The still parts of the picture (sky, planet, mountain) are drawn into a cached layer
@@ -565,21 +580,29 @@ function blitStatic(main: CanvasRenderingContext2D, cam: Camera, sim: Simulation
 }
 
 export function drawScene(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation, labels: SceneLabels, opts: SceneOptions) {
-  const t = opts.theme;
+  const k = opts.scale ?? 1;
+  const t: Theme =
+    k === 1
+      ? opts.theme
+      : { ...opts.theme, textScale: k, vectorWidth: opts.theme.vectorWidth * k, arrowHead: opts.theme.arrowHead * k, trailWidth: opts.theme.trailWidth * k };
   const body = sim.body;
   blitStatic(ctx, cam, sim, t);
 
   for (const g of sim.ghosts) drawTrail(ctx, cam, g, false, t);
   if (sim.current) drawTrail(ctx, cam, sim.current, true, t);
-  for (const g of sim.ghosts) drawShotLabel(ctx, cam, g, t);
-  if (sim.current && sim.current.flight.status !== 'flying') drawShotLabel(ctx, cam, sim.current, t);
+  const tagOn = sim.params.altitude * cam.scale < 2;
+  const placed: Placed[] = [{ x: cam.toScreenX(sim.launchPoint.x), y: cam.toScreenY(sim.launchPoint.y), w: 26, h: 16 }];
+  // The height tag sits above the cannon (drawn last): keep letters off it.
+  if (tagOn) placed.push({ x: cam.toScreenX(sim.launchPoint.x) - 10, y: cam.toScreenY(sim.launchPoint.y) - 26, w: 58, h: 22 });
+  for (const g of sim.ghosts) drawShotLabel(ctx, cam, g, t, placed);
+  if (sim.current && sim.current.flight.status !== 'flying') drawShotLabel(ctx, cam, sim.current, t, placed);
 
   const lp = sim.launchPoint;
   const lx = cam.toScreenX(lp.x);
   const ly = cam.toScreenY(lp.y);
   drawCannon(ctx, lx, ly, t);
   // Newton marked the mountain top with V.
-  if (t.engraving) mathLetter(ctx, lx - 44, ly - 6, 'V', t.ink, t.fontMath, 22, { halo: t.halo });
+  if (t.engraving) mathLetter(ctx, lx - 44 * k, ly - 6, 'V', t.ink, t.fontMath, 22 * k, { halo: t.halo });
 
   // Vectors: on the flying ball, or a preview of v₀ at the cannon before firing.
   const shot = sim.current;

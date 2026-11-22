@@ -108,6 +108,10 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [follow, setFollow] = useState(false);
   const [tab, setTab] = useState<Tab>('controls');
+  /** Presentation mode: only the picture, larger labels (H). */
+  const [present, setPresent] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [themeId, setThemeId] = useState<ThemeId>(() => {
     try {
       // 'chalk' was the earlier alternative style; it became Newton's figure.
@@ -131,7 +135,7 @@ export default function App() {
     heightTag: `h = ${heightText}`,
     caption: { figure: t.figure, text: t.caption(heightText, t.bodiesOn[params.bodyId]) },
   };
-  const options: SceneOptions = { theme: THEMES[themeId], vectors, components };
+  const options: SceneOptions = { theme: THEMES[themeId], vectors, components, scale: present ? 1.4 : 1 };
   const viewRef = useRef({ labels, options });
   viewRef.current = { labels, options };
 
@@ -266,6 +270,24 @@ export default function App() {
 
   const zoom = useCallback((f: number) => camera.zoomAt(camera.width / 2, camera.height / 2, f), [camera]);
 
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFs);
+    return () => document.removeEventListener('fullscreenchange', onFs);
+  }, []);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void document.documentElement.requestFullscreen?.().catch(() => {});
+  }, []);
+  /** Presentation mode also asks for full screen; leaving it leaves full screen too. */
+  const togglePresent = useCallback(() => {
+    setPresent((p) => {
+      if (!p && !document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => {});
+      if (p && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      return !p;
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -283,10 +305,16 @@ export default function App() {
       else if (e.key.toLowerCase() === 'l') setLang((l) => (l === 'hu' ? 'en' : 'hu'));
       else if (e.key.toLowerCase() === 'v') setVectors((v) => !v);
       else if (e.key.toLowerCase() === 't') setThemeId((th) => (th === 'real' ? 'newton' : 'real'));
+      else if (e.key.toLowerCase() === 'h') togglePresent();
+      else if (e.key === '?') setShowKeys((v) => !v);
+      else if (e.key === 'Escape') {
+        setShowKeys(false);
+        setPresent(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [togglePlay, fire, setWarp, zoom, fitAll]);
+  }, [togglePlay, fire, setWarp, zoom, fitAll, togglePresent]);
 
   const status =
     tele.status === 'idle'
@@ -301,11 +329,11 @@ export default function App() {
               ? t.flying
               : t.paused;
 
-  const tabs: [Tab, string][] = [
-    ['controls', t.tabControls],
-    ['formulas', t.tabFormulas],
-    ['graphs', t.tabGraphs],
-    ['lesson', t.tabLesson],
+  const tabs: [Tab, string, string][] = [
+    ['controls', t.tabControls, t.tabControls],
+    ['formulas', t.tabFormulas, t.tabFormulas],
+    ['graphs', t.tabGraphs, t.tabGraphs],
+    ['lesson', t.tabLesson, t.tabLessonShort],
   ];
   const overlayBtn =
     'grid h-11 min-w-11 place-items-center rounded-xl border border-(--overlay-line) bg-(--overlay-bg) px-2 text-lg text-(--overlay-ink) backdrop-blur-sm hover:brightness-125 focus-visible:outline-2 focus-visible:outline-(--chip-on-line)';
@@ -315,9 +343,13 @@ export default function App() {
 
   return (
     <LangContext.Provider value={lang}>
-      <div className="flex h-dvh flex-col overflow-hidden lg:flex-row">
+      <div className={`flex h-dvh flex-col overflow-hidden lg:flex-row phone-land:flex-row`}>
         {/* ── canvas ── */}
-        <div className="relative h-[52%] min-h-0 lg:h-full lg:w-[65%]">
+        <div
+          className={present ? 'relative h-full w-full' : `relative h-[52%] min-h-0 lg:h-full lg:w-[65%] phone-land:h-full phone-land:w-[58%]`}
+          role="img"
+          aria-label={t.canvasLabel(status)}
+        >
           <CanvasView
             sim={sim}
             camera={camera}
@@ -328,8 +360,10 @@ export default function App() {
           />
           <div className="pointer-events-none absolute top-3 left-3 max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-19rem)]">
             <div className="pointer-events-auto rounded-xl border border-(--overlay-line) bg-(--overlay-bg) px-3.5 py-2 text-(--overlay-ink) backdrop-blur-sm">
-              <p className="text-sm font-semibold sm:text-[15px]">{status}</p>
-              <p className="mt-0.5 text-xs text-(--overlay-muted) sm:text-[13px]">
+              <p className={`font-semibold ${present ? 'text-xl' : 'text-sm sm:text-[15px]'}`} aria-live="polite">
+                {status}
+              </p>
+              <p className={`mt-0.5 text-(--overlay-muted) ${present ? 'text-base' : 'text-xs sm:text-[13px]'}`}>
                 {tele.status !== 'idle' && <>t = {fmtDuration(tele.t, lang)}&ensp;</>}
                 h = {fmtDistance(tele.altitude, lang)}&ensp;
                 {tele.status !== 'idle' && <>v = {fmt(tele.speed / 1000, lang, 3)} km/s&ensp;</>}
@@ -338,6 +372,11 @@ export default function App() {
               </p>
             </div>
           </div>
+          {present ? (
+            <button className={`${overlayBtn} absolute top-3 right-3 px-3 text-sm`} onClick={togglePresent}>
+              {t.presentExit}
+            </button>
+          ) : (
           <div className="absolute top-3 right-3 flex flex-col items-end gap-2 sm:flex-row sm:items-center">
             <div
               role="radiogroup"
@@ -354,7 +393,18 @@ export default function App() {
               <span className="text-sm font-semibold">{lang === 'hu' ? 'EN' : 'HU'}</span>
             </button>
           </div>
+          )}
           <div className="absolute right-3 bottom-3 flex flex-col gap-2">
+            {!present && (
+              <>
+                <button className={overlayBtn} onClick={togglePresent} aria-label={t.present} title={`${t.present} (H)`}>
+                  <span className="text-base">▭</span>
+                </button>
+                <button className={overlayBtn} onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={t.fullscreen} title={t.fullscreen}>
+                  <span className="text-base">{isFullscreen ? '⤡' : '⛶'}</span>
+                </button>
+              </>
+            )}
             <button className={overlayBtn} onClick={() => zoom(1.6)} aria-label={t.zoomIn} title={t.zoomIn}>
               +
             </button>
@@ -377,7 +427,9 @@ export default function App() {
         </div>
 
         {/* ── side panel ── */}
-        <aside className="flex h-[48%] min-h-0 flex-col border-t border-(--line) bg-(--panel) lg:h-full lg:w-[35%] lg:border-t-0 lg:border-l">
+        <aside
+          className={`${present ? 'hidden' : 'flex'} h-[48%] min-h-0 flex-col border-t border-(--line) bg-(--panel) lg:h-full lg:w-[35%] lg:border-t-0 lg:border-l phone-land:h-full phone-land:w-[42%] phone-land:border-t-0 phone-land:border-l`}
+        >
           <header className="hidden px-6 pt-5 lg:block">
             <h1 className="font-math text-[27px] leading-tight">
               <i>Newton</i>
@@ -386,19 +438,22 @@ export default function App() {
             </h1>
           </header>
           <nav className="flex gap-1 overflow-x-auto border-b border-(--line) px-3 pt-2 lg:px-5 lg:pt-3" role="tablist">
-            {tabs.map(([id, label]) => (
+            {tabs.map(([id, label, short]) => (
               <button
                 key={id}
+                id={`tab-${id}`}
                 role="tab"
                 aria-selected={tab === id}
+                aria-controls="tabpanel"
                 onClick={() => setTab(id)}
                 className={`-mb-px min-h-11 shrink-0 border-b-2 px-3 text-sm ${tab === id ? 'border-(--chip-on-line) font-semibold' : 'border-transparent text-(--muted) hover:text-(--ink)'}`}
               >
-                {label}
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{short}</span>
               </button>
             ))}
           </nav>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:px-6 lg:py-5">
+          <div id="tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 overflow-y-auto p-4 lg:px-6 lg:py-5">
             {tab === 'controls' ? (
               <ControlsPanel
                 energy={
@@ -448,8 +503,41 @@ export default function App() {
               />
             )}
           </div>
+          <footer className="hidden border-t border-(--line) px-6 py-2 lg:block">
+            <button className="min-h-9 text-sm text-(--muted) underline underline-offset-4 hover:text-(--ink)" onClick={() => setShowKeys(true)}>
+              {t.keysButton}
+            </button>
+          </footer>
         </aside>
       </div>
+      {showKeys && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setShowKeys(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.keysTitle}
+            className="w-full max-w-md rounded-2xl border border-(--line) bg-(--panel) p-6 text-(--ink) shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{t.keysTitle}</h2>
+              <button className="min-h-9 min-w-9 text-(--muted) hover:text-(--ink)" onClick={() => setShowKeys(false)} aria-label={t.close} autoFocus>
+                ✕
+              </button>
+            </div>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[15px]">
+              {t.keys.map(([k, d]) => (
+                <div key={k} className="contents">
+                  <dt>
+                    <kbd className="rounded border border-(--line) bg-(--chip-on) px-2 py-0.5 text-sm">{k}</kbd>
+                  </dt>
+                  <dd className="m-0">{d}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      )}
     </LangContext.Provider>
   );
 }

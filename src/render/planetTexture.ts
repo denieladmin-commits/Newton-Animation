@@ -85,16 +85,6 @@ export function coast(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
   ctx.closePath();
 }
 
-/** Blob made of overlapping circles along a random walk (continents, maria, dark regions). */
-function blob(ctx: CanvasRenderingContext2D, rnd: () => number, x: number, y: number, size: number, steps: number) {
-  for (let i = 0; i < steps; i++) {
-    ctx.beginPath();
-    ctx.arc(x, y, size * (0.4 + rnd() * 0.6), 0, Math.PI * 2);
-    ctx.fill();
-    x += (rnd() - 0.5) * size * 1.2;
-    y += (rnd() - 0.5) * size * 1.2;
-  }
-}
 
 /** Pre-rendered planet disk (SIZE × SIZE), shaded with light from the upper left. */
 export function planetTexture(id: BodyId): HTMLCanvasElement {
@@ -159,7 +149,11 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
     }
   } else if (id === 'moon') {
     ctx.fillStyle = 'rgba(55,60,70,0.45)';
-    for (let k = 0; k < 6; k++) blob(ctx, rnd, rnd() * SIZE, rnd() * SIZE, 45 + rnd() * 40, 14);
+    // Maria: smooth dark plains
+    for (let k = 0; k < 7; k++) {
+      coast(ctx, (0.15 + rnd() * 0.7) * SIZE, (0.15 + rnd() * 0.7) * SIZE, (0.05 + rnd() * 0.09) * SIZE, 0.8 + rnd() * 0.6, 300 + k);
+      ctx.fill();
+    }
     for (let k = 0; k < 140; k++) {
       const x = rnd() * SIZE;
       const y = rnd() * SIZE;
@@ -176,9 +170,16 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
     }
   } else {
     ctx.fillStyle = 'rgba(80,25,8,0.45)';
-    for (let k = 0; k < 9; k++) blob(ctx, rnd, rnd() * SIZE, SIZE * 0.2 + rnd() * SIZE * 0.6, 30 + rnd() * 45, 20);
+    // Dark albedo regions (like Syrtis Major) and lighter dusty plains
+    for (let k = 0; k < 8; k++) {
+      coast(ctx, rnd() * SIZE, (0.2 + rnd() * 0.6) * SIZE, (0.04 + rnd() * 0.08) * SIZE, 1 + rnd() * 1.2, 500 + k);
+      ctx.fill();
+    }
     ctx.fillStyle = 'rgba(234,120,60,0.35)';
-    for (let k = 0; k < 6; k++) blob(ctx, rnd, rnd() * SIZE, rnd() * SIZE, 30 + rnd() * 30, 12);
+    for (let k = 0; k < 5; k++) {
+      coast(ctx, rnd() * SIZE, rnd() * SIZE, (0.04 + rnd() * 0.05) * SIZE, 1 + rnd(), 600 + k);
+      ctx.fill();
+    }
     ctx.fillStyle = '#f8ede6';
     ctx.beginPath();
     ctx.ellipse(R, 6, R * 0.35, 40, 0, 0, Math.PI * 2);

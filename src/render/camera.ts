@@ -66,6 +66,11 @@ export class Camera implements View {
   /** Animate smoothly to a view. */
   animateTo(view: View) {
     this.target = { ...view, scale: this.clampScale(view.scale) };
+    // Respect "reduce motion": jump instead of gliding.
+    if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      Object.assign(this, this.target);
+      this.target = null;
+    }
   }
 
   /** Frame a world-space box (with margin), leaving `padTop` px free for overlays. */

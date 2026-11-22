@@ -162,3 +162,14 @@ Csak az adott böngészőben (a gépen). Nem kerül fel internetre, és a „Hal
 
 **39. Mi történik, ha egy jelölésre kattintunk a Képletek fülön?**
 Megjelenik a jel neve, rövid magyarázata, mértékegysége és egy jellemző értéke. Ugyanez a lista a Képletek fül alján is megtalálható (Jelölések). Minden jel egyetlen fájlban van megadva (src/i18n/notation.ts), így ha a füzetben más a jelölés (például a_cp helyett a_c), egyetlen sor átírásával mindenhol megváltozik.
+
+## Órai használat
+
+**40. Hogyan vetítsem ki?**
+Nyomd meg a H billentyűt (vagy a kép jobb alsó sarkában a ▭ gombot): a kezelőpanel eltűnik, a kép kitölti a képernyőt, a betűk és nyilak 1,4-szer nagyobbak, és a böngésző teljes képernyőre vált. Ugyanígy (H vagy Esc) lehet kilépni. A billentyűparancsok listája a ? billentyűvel nyílik meg. Világos teremben a „Newton rajza” stílus olvashatóbb, sötétített teremben a „Valósághű”.
+
+**41. Miért hiányzik néha egy betű (pl. B) a becsapódási pontok mellől?**
+Ha két becsapódási pont nagyon közel van egymáshoz (például az Everestről lőve, teljes bolygónézetben), a betűk egymásra kerülnének. Ilyenkor a program kihagyja azt a betűt, amelynek nem talál szabad helyet; a pont ott marad. Nagyítva a betű megjelenik.
+
+**42. Működik telefonon és táblagépen?**
+Igen. Állítva a kép felül, a kezelőpanel alul van; elfordítva a kettő egymás mellé kerül. A kép két ujjal nagyítható, egy ujjal mozgatható.
