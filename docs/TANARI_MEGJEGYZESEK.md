@@ -47,7 +47,7 @@ Mert valódi méretarányban rajzoljuk. A Mount Everest magassága a Föld sugar
 Newton rajzán a hegy erősen eltúlzott magasságú, hogy látszódjon. Az alkalmazásban minden valódi méretarányban van, ezért kell közelíteni. Cserébe minden, ami a képernyőn látszik, mérhető és pontos.
 
 **12a. Az Everestről kilőtt golyók miért mind a hegy közelében csapódnak be?**
-Mert a hegy nagyon alacsony a bolygóhoz képest. Az Everestről kilőve még 7,6 km/s-mal is csak kb. 1270 km-re jut el a golyó, 8,85 km magasról nincs „hova esnie”. A Newton-rajzhoz hasonló, egyre messzebb érkező lövéssorozat (A, B, C, D…) jól látszik, ha a hegy magasságát az ISS-gombbal 400 km-re állítjuk: ekkor 4,0 km/s-mal 2850 km-re, 7,3 km/s-mal már a bolygó túloldalára jut a golyó.
+Mert a hegy nagyon alacsony a bolygóhoz képest. Az Everestről kilőve még 7,6 km/s-mal is csak kb. 1180 km-re jut el a golyó: 8,85 km magasról nincs „hova esnie”. A Newton rajzához hasonló, egyre messzebb érkező lövéssorozat (A, B, C, D…) akkor látszik jól, ha a hegy magasságát az ISS-gombbal 400 km-re állítjuk. Innen 4,0 km/s-mal kb. 1380 km, 6,0 km/s-mal 2860 km, 7,3 km/s-mal 7380 km, 7,5 km/s-mal már 12 280 km a lőtávolság (a pontos értékeket Kepler-képlettel is ellenőriztük).
 
 **12b. Az Everestről indított körpálya miért „fekszik rá” a bolygó felszínére?**
 Mert 8,85 km magasan halad, ami teljes bolygónézetben kevesebb mint fél képpont. Közelítéskor jól látszik, hogy a pálya végig a felszín felett marad.

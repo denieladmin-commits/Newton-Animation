@@ -264,6 +264,7 @@ export function advanceFlight(
 
     if (radius(next) <= R) {
       next = findImpact(prev, h, env);
+      flight.swept += Math.atan2(prev.x * next.y - prev.y * next.x, prev.x * next.x + prev.y * next.y);
       flight.state = next;
       flight.status = 'crashed';
       onStep?.(next);

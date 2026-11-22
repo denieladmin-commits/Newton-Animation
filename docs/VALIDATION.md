@@ -33,6 +33,7 @@ in the browser and show them in Hungarian.*
 | 7 | Simulated path vs. exact Kepler conic (circle, 3 ellipses on 3 planets, hyperbola) | same path | < 1 m per 1000 km |
 | 8 | Measured period vs. Kepler's third law (4 orbits) | T = 2π√(a³/GM) | 0,01 % |
 | 9 | Sub-orbital landing time and place (5 speeds) | analytic impact | 10⁻⁶ in time, < 1 m in range |
+| 9b | Range shown in the app, from 400 km: 4,0 / 6,0 / 7,0 / 7,3 km/s | 1382 / 2856 / 5171 / 7384 km | 0,5 km |
 | 10 | Free fall from 100 km | closed-form fall time | 10⁻⁶ |
 | 11 | Total energy at exactly v₂ | 0 | 10⁻¹² |
 | 12 | 1,001·v₂ escapes; 0,999·v₂ stays bound | — | — |

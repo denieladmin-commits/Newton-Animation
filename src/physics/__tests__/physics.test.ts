@@ -160,6 +160,17 @@ describe('agreement with the exact Kepler solution (drag-free)', () => {
       const angle = Math.atan2(f.state.x, f.state.y);
       // surface range error < 1 m
       expect(Math.abs(angle - exact.angle) * earth.radius).toBeLessThan(1);
+      // …and the range the app displays (from the swept angle) agrees too
+      expect(Math.abs(Math.abs(f.swept) - exact.angle) * earth.radius).toBeLessThan(1);
+    }
+  });
+
+  it('range readout from ISS height matches Kepler (4.0 → 1382 km, 6.0 → 2856 km, 7.3 → 7384 km)', () => {
+    for (const [v0, km] of [[4000, 1382], [6000, 2856], [7000, 5171], [7300, 7384]] as const) {
+      const f = createFlight({ body: earth, altitude: ISS, v0, drag: false });
+      run(f, 1e5);
+      expect(f.status).toBe('crashed');
+      expect(Math.abs(f.swept) * earth.radius / 1000).toBeCloseTo(km, 0);
     }
   });
 
