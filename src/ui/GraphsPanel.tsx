@@ -64,6 +64,7 @@ interface ChartProps {
 
 function Chart({ def, buf, version, hover, onHover, lang, themeId, timeLabel }: ChartProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const t = useT();
   const [width, setWidth] = useState(300);
   const H = 184;
   const pad = { l: 46, r: 64, t: 10, b: 40 };
@@ -251,7 +252,7 @@ function Chart({ def, buf, version, hover, onHover, lang, themeId, timeLabel }: 
         <span className="text-sm text-(--muted)">{unitText}</span>
       </figcaption>
       {def.series.length > 1 && (
-        <ul className="mb-1 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="legend">
+        <ul className="mb-1 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label={t.legend}>
           {def.series.map((s) => (
             <li key={s.key} className="flex items-center gap-1.5">
               <span className="inline-block h-0.5 w-4 rounded" style={{ background: `var(${s.color})` }} />

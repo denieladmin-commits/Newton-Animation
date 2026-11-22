@@ -3,11 +3,13 @@ import type { Lang } from './format';
 
 const hu = {
   appTitle: 'Newton ágyúgolyója',
+  titleTail: 'ágyúgolyója',
+  language: 'Nyelv: English',
+  legend: 'Jelmagyarázat',
   tabControls: 'Vezérlés',
   tabFormulas: 'Képletek',
   tabGraphs: 'Grafikonok',
   tabLesson: 'Felfedező mód',
-  comingSoon: 'Hamarosan (következő mérföldkő).',
   body: 'Égitest',
   bodies: { earth: 'Föld', moon: 'Hold', mars: 'Mars' } satisfies Record<BodyId, string>,
   altitude: 'Hegy magassága',
@@ -93,17 +95,24 @@ const hu = {
   gChart: 'Grafikon',
   gEnergyNote: 'A teljes energia (E) vonala vízszintes: E állandó, csak E_k és E_p alakul át egymásba.',
   gEnergyNoteDrag: 'Légellenállással a teljes energia (E) csökken.',
+  glossary: 'Jelölések',
+  glossaryHint: 'Kattints bármelyik jelre a képletekben, és megjelenik, mit jelent.',
+  unit: 'Mértékegység',
+  typical: 'Jellemző érték',
+  close: 'Bezárás',
 };
 
 export type Strings = typeof hu;
 
 const en: Strings = {
   appTitle: "Newton's Cannonball",
+  titleTail: '’s cannonball',
+  language: 'Language: magyar',
+  legend: 'Legend',
   tabControls: 'Controls',
   tabFormulas: 'Formulas',
   tabGraphs: 'Graphs',
   tabLesson: 'Explore',
-  comingSoon: 'Coming soon (next milestone).',
   body: 'Celestial body',
   bodies: { earth: 'Earth', moon: 'Moon', mars: 'Mars' },
   altitude: 'Mountain height',
@@ -189,6 +198,11 @@ const en: Strings = {
   gChart: 'Chart',
   gEnergyNote: 'The total energy line (E) is flat: E is constant, only E_k and E_p turn into each other.',
   gEnergyNoteDrag: 'With air drag the total energy (E) falls.',
+  glossary: 'Symbols',
+  glossaryHint: 'Click any symbol in the formulas to see what it means.',
+  unit: 'Unit',
+  typical: 'Typical value',
+  close: 'Close',
 };
 
 export const STRINGS: Record<Lang, Strings> = { hu, en };

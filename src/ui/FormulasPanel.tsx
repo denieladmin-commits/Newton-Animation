@@ -3,6 +3,8 @@ import { Formula } from '../Formula';
 import { bodyMass, G, type Body } from '../physics/bodies';
 import { fmt, texNum, type Lang } from '../i18n/format';
 import { useLang, useT } from '../i18n';
+import { sym, type SymbolId } from '../i18n/notation';
+import { GlossaryList, SymbolPopover } from './Glossary';
 import { BALL_MASS } from '../sim/simulation';
 import type { ThemeId } from '../theme/themes';
 
@@ -45,6 +47,7 @@ export function FormulasPanel({ body, r0, altitude, r, v, themeId }: Props) {
   const t = useT();
   const lang = useLang();
   const [more, setMore] = useState(false);
+  const [popover, setPopover] = useState<{ id: SymbolId; x: number; y: number } | null>(null);
   const c = TEX_COLORS[themeId];
   const M = bodyMass(body);
   const m = BALL_MASS;
@@ -59,39 +62,54 @@ export function FormulasPanel({ body, r0, altitude, r, v, themeId }: Props) {
   const e = ek + ep;
   const eps = e / m;
 
+  // Clickable symbols, all from i18n/notation.ts.
+  const [Fs, Gs, Ms, ms, rs, vs, v1s, v2s, Es, Eks, Eps, Fcps, epss] = (
+    ['F', 'G', 'M', 'm', 'r', 'v', 'v1', 'v2', 'E', 'Ek', 'Ep', 'Fcp', 'eps'] as const
+  ).map(sym);
+  const cancelM = `\\color{${c.hl}}{\\cancel{${ms}}}`;
+
+  const onClick = (e: React.MouseEvent) => {
+    const el = (e.target as Element).closest('[data-sym]') as HTMLElement | null;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPopover({ id: el.dataset.sym as SymbolId, x: rect.left + rect.width / 2, y: rect.bottom });
+  };
+
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-(--muted)">{t.fLive}</p>
+    <div className="formulas space-y-5" onClick={onClick}>
+      <p className="text-sm text-(--muted)">
+        {t.fLive} {t.glossaryHint}
+      </p>
 
       <Step title={t.fForceTitle}>
         <p className="text-[15px]">{t.fForceIntro}</p>
         <Display
-          tex={`\\begin{aligned} F &= G\\,\\frac{M m}{r^2} \\\\ &= ${n(G)} \\cdot \\frac{${n(M)} \\cdot ${m}}{\\left(${n(r)}\\right)^2}\\ \\mathrm{N} \\\\ &\\approx ${plain(F, F >= 100 ? 0 : 1)}\\ \\mathrm{N} \\end{aligned}`}
+          tex={`\\begin{aligned} ${Fs} &= ${Gs}\\,\\frac{${Ms}\\,${ms}}{${rs}^2} \\\\ &= ${n(G)} \\cdot \\frac{${n(M)} \\cdot ${m}}{\\left(${n(r)}\\right)^2}\\ \\mathrm{N} \\\\ &\\approx ${plain(F, F >= 100 ? 0 : 1)}\\ \\mathrm{N} \\end{aligned}`}
         />
       </Step>
 
       <Step title={t.fV1Title}>
         <p className="text-[15px]">{t.fV1Intro}</p>
         <Display
-          tex={`F = F_{cp} \\;\\Rightarrow\\; G\\,\\frac{M\\,\\color{${c.hl}}{\\cancel{m}}}{r^2} = \\frac{\\color{${c.hl}}{\\cancel{m}}\\,v^2}{r} \\;\\Rightarrow\\; v_1 = \\sqrt{\\frac{GM}{r}}`}
+          tex={`${Fs} = ${Fcps} \\;\\Rightarrow\\; ${Gs}\\,\\frac{${Ms}\\,${cancelM}}{${rs}^2} = \\frac{${cancelM}\\,${vs}^2}{${rs}} \\;\\Rightarrow\\; ${v1s} = \\sqrt{\\frac{${Gs}${Ms}}{${rs}}}`}
         />
         <p className="text-sm text-(--muted)">{t.fMassCancels}</p>
         <p className="text-[15px]">{t.fAtMountain(km(body.radius, lang), km(altitude, lang))}</p>
-        <Display tex={`\\begin{aligned} v_1 &= \\sqrt{\\frac{${n(G)} \\cdot ${n(M)}}{${n(r0)}}}\\ \\mathrm{m/s} \\\\ &\\approx ${plain(v1 / 1000, 2)}\\ \\mathrm{km/s} \\end{aligned}`} />
+        <Display tex={`\\begin{aligned} ${v1s} &= \\sqrt{\\frac{${n(G)} \\cdot ${n(M)}}{${n(r0)}}}\\ \\mathrm{m/s} \\\\ &\\approx ${plain(v1 / 1000, 2)}\\ \\mathrm{km/s} \\end{aligned}`} />
       </Step>
 
       <Step title={t.fV2Title}>
         <p className="text-[15px]">{t.fV2Intro}</p>
-        <Display tex={`v_2 = \\sqrt{\\frac{2GM}{r}} = \\sqrt{2}\\cdot v_1 \\approx ${plain(v2 / 1000, 2)}\\ \\mathrm{km/s}`} />
+        <Display tex={`${v2s} = \\sqrt{\\frac{2${Gs}${Ms}}{${rs}}} = \\sqrt{2}\\cdot ${v1s} \\approx ${plain(v2 / 1000, 2)}\\ \\mathrm{km/s}`} />
       </Step>
 
       <Step title={t.fEnergyTitle}>
         <p className="text-[15px]">{t.fEnergyIntro.replace('E_p', 'Eₚ')}</p>
         <Display
-          tex={`{\\color{${c.e}}E} = {\\color{${c.ek}}E_k} + {\\color{${c.ep}}E_p} = \\frac{1}{2}\\,m v^2 - G\\,\\frac{M m}{r}`}
+          tex={`{\\color{${c.e}}${Es}} = {\\color{${c.ek}}${Eks}} + {\\color{${c.ep}}${Eps}} = \\frac{1}{2}\\,${ms}\\,${vs}^2 - ${Gs}\\,\\frac{${Ms}\\,${ms}}{${rs}}`}
         />
         <Display
-          tex={`\\begin{aligned} {\\color{${c.e}}E} &= ${n(ek, 2)}\\ \\mathrm{J} + \\left(${n(ep, 2)}\\ \\mathrm{J}\\right) \\\\ &= ${n(e, 2)}\\ \\mathrm{J} \\end{aligned}`}
+          tex={`\\begin{aligned} {\\color{${c.e}}${Es}} &= ${n(ek, 2)}\\ \\mathrm{J} + \\left(${n(ep, 2)}\\ \\mathrm{J}\\right) \\\\ &= ${n(e, 2)}\\ \\mathrm{J} \\end{aligned}`}
         />
         <p className="text-[15px]">{e < 0 ? t.energyBound : t.energyFree}</p>
         <button
@@ -104,10 +122,16 @@ export function FormulasPanel({ body, r0, altitude, r, v, themeId }: Props) {
         {more && (
           <>
             <p className="text-[15px]">{t.fMoreText}</p>
-            <Display tex={`\\varepsilon = \\frac{E}{m} = \\frac{v^2}{2} - \\frac{GM}{r} = ${n(eps, 2)}\\ \\mathrm{J/kg}`} />
+            <Display tex={`${epss} = \\frac{${Es}}{${ms}} = \\frac{${vs}^2}{2} - \\frac{${Gs}${Ms}}{${rs}} = ${n(eps, 2)}\\ \\mathrm{J/kg}`} />
           </>
         )}
       </Step>
+
+      <Step title={t.glossary}>
+        <GlossaryList />
+      </Step>
+
+      {popover && <SymbolPopover {...popover} onClose={() => setPopover(null)} />}
     </div>
   );
 }

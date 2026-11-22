@@ -68,6 +68,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .font-math { font-family: var(--font-math); }
+/* Clickable symbols inside formulas (\htmlData{sym=…}) */
+.formulas [data-sym] { cursor: pointer; border-radius: 3px; }
+.formulas [data-sym]:hover { background: var(--chip-on); outline: 1px solid var(--chip-on-line); }
 input[type='range'] { accent-color: var(--control); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

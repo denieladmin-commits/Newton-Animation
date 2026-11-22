@@ -8,6 +8,8 @@ import { energies, Simulation, WARP_PRESETS, type LaunchParams, type Warp } from
 import { EnergyBars, energyScale } from './ui/EnergyBars';
 import { FormulasPanel } from './ui/FormulasPanel';
 import { GraphsPanel } from './ui/GraphsPanel';
+import { LessonPanel } from './ui/LessonPanel';
+import type { LessonSetup } from './sim/lessons';
 import { fmt, fmtDistance, fmtDuration, type Lang } from './i18n/format';
 import { LangContext } from './i18n';
 import { STRINGS } from './i18n/strings';
@@ -239,6 +241,18 @@ export default function App() {
     setFollow(false);
   }, [sim]);
 
+  /** Lesson "set it up for me": planet, height, speed and time warp, with old shots cleared. */
+  const applySetup = useCallback(
+    (ls: LessonSetup) => {
+      clear();
+      if (ls.v0 === 'v1') setParams({ bodyId: ls.bodyId, altitude: ls.altitude, drag: false }, 'v1');
+      else setParams({ bodyId: ls.bodyId, altitude: ls.altitude, drag: false, v0: ls.v0 }, 'free');
+      setWarp(ls.warp);
+      fitPlanet();
+    },
+    [clear, setParams, setWarp, fitPlanet],
+  );
+
   const zoom = useCallback((f: number) => camera.zoomAt(camera.width / 2, camera.height / 2, f), [camera]);
 
   // Keyboard shortcuts
@@ -324,7 +338,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <button className={overlayBtn} onClick={() => setLang(lang === 'hu' ? 'en' : 'hu')} aria-label="Language">
+            <button className={overlayBtn} onClick={() => setLang(lang === 'hu' ? 'en' : 'hu')} aria-label={t.language}>
               <span className="text-sm font-semibold">{lang === 'hu' ? 'EN' : 'HU'}</span>
             </button>
           </div>
@@ -354,7 +368,9 @@ export default function App() {
         <aside className="flex h-[48%] min-h-0 flex-col border-t border-(--line) bg-(--panel) lg:h-full lg:w-[35%] lg:border-t-0 lg:border-l">
           <header className="hidden px-6 pt-5 lg:block">
             <h1 className="font-math text-[27px] leading-tight">
-              <i>Newton</i> {lang === 'hu' ? 'ágyúgolyója' : 'cannonball'}
+              <i>Newton</i>
+              {lang === 'hu' ? ' ' : ''}
+              {t.titleTail}
             </h1>
           </header>
           <nav className="flex gap-1 overflow-x-auto border-b border-(--line) px-3 pt-2 lg:px-5 lg:pt-3" role="tablist">
@@ -411,7 +427,13 @@ export default function App() {
             ) : tab === 'graphs' ? (
               <GraphsPanel sim={sim} themeId={themeId} />
             ) : (
-              <p className="text-sm text-(--muted)">{t.comingSoon}</p>
+              <LessonPanel
+                sim={sim}
+                onSetup={applySetup}
+                v0={params.v0}
+                onV0={(v) => setParams({ v0: Math.min(v, maxLaunchSpeed(params)) }, 'free')}
+                onFire={fire}
+              />
             )}
           </div>
         </aside>

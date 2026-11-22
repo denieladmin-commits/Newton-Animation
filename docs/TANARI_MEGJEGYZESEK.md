@@ -142,3 +142,17 @@ A program mindig a teljes pontossággal számol, a képernyőn 3–4 értékes j
 
 **35. A grafikonokon miért csak az aktuális lövés látszik?**
 Hogy az időtengely egyértelmű legyen. Egy új lövéssel a grafikon újraindul; a korábbi lövések pályája a képen továbbra is látszik (A, B, C…). A Táblázat gomb a grafikon adatait számokkal is megmutatja.
+
+## Felfedező mód és jelölések
+
+**36. Hogyan „tudja” az alkalmazás, hogy egy feladat teljesült?**
+A feladatokat a szimuláció adataiból ellenőrzi, nem a diák válaszából: 1. legalább 5000 km-es lőtávolság; 2. v₁-gyel indított lövés, amely legalább 1 s-ig repült; 3. egy teljes kör olyan pályán, amelynek excentricitása 0,01 alatt van; 4. a golyó elszökött. A jóslókérdés csak gondolkodtat, a feladat teljesítését nem befolyásolja. Mindhárom ellenőrzés automatikus teszttel is igazolva van.
+
+**37. A 2. feladat ábráján miért fedi egymást a két görbe?**
+Mert a golyó esése (½·g·t²) és a felszín görbülete (d²/2R) az első másodpercben valóban ugyanannyi, 4,90 m – ez Newton gondolatának lényege. Az ábra függőlegesen kb. 460-szorosan nagyít, különben az 5 m 8 km mellett nem látszana; a két érték a szimulációból számolódik.
+
+**38. Hol tárolódik a diákok haladása?**
+Csak az adott böngészőben (a gépen). Nem kerül fel internetre, és a „Haladás törlése” gombbal bármikor újrakezdhető – például óra elején, ha több osztály ugyanazt a gépet használja.
+
+**39. Mi történik, ha egy jelölésre kattintunk a Képletek fülön?**
+Megjelenik a jel neve, rövid magyarázata, mértékegysége és egy jellemző értéke. Ugyanez a lista a Képletek fül alján is megtalálható (Jelölések). Minden jel egyetlen fájlban van megadva (src/i18n/notation.ts), így ha a füzetben más a jelölés (például a_cp helyett a_c), egyetlen sor átírásával mindenhol megváltozik.
