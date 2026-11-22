@@ -14,7 +14,7 @@ The spec is solid. These are the problems I found and how the plan fixes them:
 | 1 | Altitude slider runs **10–1000 km**, but the Everest preset is **8.85 km**, below the minimum. | Slider runs **1–1000 km** on a log scale. Presets: Everest 8.85 km, Kármán line 100 km, ISS 400 km. |
 | 2 | **Energy bar with negative PE.** E_p = −GMm/r is always negative, so a two-color bar that adds to a constant can't be drawn honestly. | Signed bar chart with a zero line: E_k (+), E_p (−), total ε. **ε < 0 → bound, ε = 0 → escape threshold, ε > 0 → escapes.** This is the strongest teaching point in the app. |
 | 3 | **Drag makes total energy drop**, so "total stays constant" isn't true when drag is on. | Add a third segment, "lost to drag / heat" (*hővé alakult*), and say why total falls. |
-| 4 | **Realistic drag is too strong to show.** At 8.85 km and 7.9 km/s, a 10 kg cannonball loses half its speed in about 1 s. | Drag gets **two labelled modes, no free slider**. **Realistic** (*Valósághű*): the ball stops almost at once, which shows why Newton's mountain is an idealisation and why real satellites fly above the atmosphere. **Accelerated orbital decay** (*Felgyorsított pályacsökkenés*, ×1000): launch above about 150 km, where real drag is tiny, and watch the orbit slowly spiral down, the way real satellites eventually fall back unless they are boosted. Only the time is compressed, and the label says so. No atmosphere on the Moon. |
+| 4 | **Realistic drag is very strong.** At 8.85 km and 7.9 km/s, a 10 kg cannonball loses half its speed in about 1 s. | **Simple on/off toggle (*Légellenállás: be / ki*), realistic only, no adjustable strength.** **Off** = Newton's idealised vacuum (the default). **On** = real air: an exponential atmosphere and an iron 10 kg sphere (radius ≈ 6.7 cm, constant drag coefficient C_d ≈ 0.5). The ball slows almost at once and falls short, which shows why Newton's mountain is an idealisation and why real satellites fly above the atmosphere. At ISS height the effect is real but tiny, and the app says so. No atmosphere on the Moon, so the toggle is disabled there. |
 | 5 | **Scale.** Earth's radius is 6371 km, but the 1 s fall is 4.9 m, a zoom range of about 10⁶×. A circle 6×10⁶ px wide renders badly on canvas, and an 8.85 km mountain is invisible at full-planet zoom. | At high zoom, draw the surface as a local polyline. At low zoom, draw the mountain and cannon as a screen-space illustration with a small "not to scale" tag. Add a **camera follow** mode. |
 | 6 | **1x real-time shows almost nothing at planet zoom.** The ball moves about 1 px/s. | On launch at 1x, the camera auto-frames the cannon. A "4.9 m" drop ruler appears after t = 1 s. |
 | 7 | **Arrow lengths:** velocity (m/s) and force (N) have different units, and the vectors must stay readable at every zoom. | Arrows sized in **screen pixels** (fixed base length, scaled by the value relative to v₁ or F at launch) and kept independent of zoom. Real values go in the pill labels. |
@@ -64,6 +64,7 @@ src/
     FormulaDrawer.tsx    # KaTeX derivations with live values
     EnergyBar.tsx
     LessonPanel.tsx      # 4 challenges (Felfedező mód)
+    VerificationPage.tsx # teacher-facing proof page, runs the checks live (§8)
     Telemetry.tsx        # floating HUD on canvas
     ZoomButtons.tsx
   i18n/
@@ -130,6 +131,7 @@ src/
 | **M6** | Formula drawer, energy bar, telemetry, graphs tab | Live numbers match the physics; the drag-loss segment works |
 | **M7** | i18n EN/HU, notation.ts + glossary (*Jelölések*, clickable symbols), lesson mode | Full HU pass with no missing strings; all 4 challenges pass their checks |
 | **M8** | Responsive polish, projector mode, shortcuts, a11y | Playwright screenshots at 1440×900 and 390×844 in EN and HU look right |
+| **M8b** | Teacher verification page and printable report (§8, Layer 7) | Every check runs in the browser in under 10 s, all pass, the report prints cleanly in HU |
 | **M9** | Deploy | GitHub Pages workflow (or Vercel), README with classroom guide |
 
 ## 7. Decisions (confirmed)
@@ -168,7 +170,16 @@ src/
 - Rounding and significant figures: HU shows `7,91 km/s`, EN `7.91 km/s`; tests cover the formatting.
 - Playwright screenshots at both zoom extremes, in EN and HU.
 
-**Layer 7: human sign-off.** `docs/VALIDATION.md` lists every formula, constant and number the app shows, with its expected value and source, written to be checked by a physics teacher against the class textbook. Simplifications (2D, point mass, non-rotating planet, simple atmosphere) are stated openly in the app's *About the model* (*A modellről*) box.
+**Layer 7: proof the teacher can see (*Ellenőrzés* page).** The tests above don't just run on a developer's computer. They are built into the app itself as a teacher-facing page (opened from the *A modellről* box or with `?verify` in the URL). It works offline from the same single file.
+- **A "Run all checks" button** (*Ellenőrzések futtatása*) runs the same checks live in the teacher's own browser, in a few seconds. The results are computed there and then, not copied from somewhere.
+- **One row per claim**, in plain Hungarian: what is being checked, the expected value and its source (formula, NASA fact sheet, textbook), the value the simulation got, the difference, and ✓ or ✗. Example: "Circular orbit at 400 km: period. Expected 92,4 min (Kepler III), simulated 92,4 min, difference 0,001 %, ✓".
+- **Proof charts:**
+  - the simulated path drawn on top of the exact ellipse from the formula, so the two lines coincide;
+  - total energy over 100 orbits, a flat line with the tiny numerical drift written next to it;
+  - the convergence plot, error shrinking 16× each time the step is halved, and what that means in one sentence.
+- **Limitations, stated openly:** 2D, point mass, non-rotating planet, spherical planet, simple exponential atmosphere with a constant drag coefficient, no heating or burn-up, no Moon or Sun pulling on the ball. For each one, a sentence on why it doesn't change the lesson.
+- **Printable report:** a print button lays it out as an A4 report (date, app version, all results), so the teacher can file it or show it to colleagues.
+- `docs/VALIDATION.md` in the repo holds the same content with references, for anyone reviewing the source code.
 
 ## 9. Symbol glossary (*Jelölések*)
 
