@@ -231,3 +231,23 @@ export const notation = {
   // …one entry per row in the table above
 } as const satisfies Record<string, NotationEntry>;
 ```
+
+## 10. Visual design (decided from prototypes, see `prototypes/`)
+
+Two themes, switchable with a **Valósághű | Tábla** button at the top right of the canvas (remembered per device):
+
+| | **Valósághű** (main) | **Tábla** (alternative) |
+|---|---|---|
+| Background | deep space `#081221`, stars, faint polar grid | chalkboard green `#25362e`, slight chalk smudge |
+| Planet | stylised globe: ocean, organic continents, clouds, polar ice, night side, blue atmosphere rim | engraving-style hatching in chalk, denser towards the rim (like Newton's 1728 plate) |
+| Lines | precise, thin; no decorative glow | chalk texture on all drawing |
+| Vectors | v `#7cd0ff`, F `#ff8f80` | v chalk yellow `#f4e27a`, F chalk red `#f28b82` |
+| Panel | dark navy `#0f1b2e`, amber "Tűz!" | light paper `#f2f1ec`, green "Tűz!" `#2f6b4f` |
+| Type | Instrument Sans (UI) + Newsreader italic (formula letters) | Atkinson Hyperlegible (UI) + Newsreader italic |
+
+Shared in both themes (chosen in round 1):
+- **Control panel:** the current list layout, with sentence-case labels instead of all-caps.
+- **Vector arrows:** thin textbook style: classic arrowhead, italic v and F with an arrow on top, dashed tangent and radius, a small right-angle square.
+- **Energy:** horizontal signed bars with a zero line: E_k, E_p, E, with values and the sentence "E < 0, ezért a golyó a bolygó körül marad."
+- **Figure caption** under the canvas ("1. ábra. …"), and italic serif letters A, B, C for earlier shots.
+- Fonts are embedded in the single offline file (woff2, Latin + Latin Extended subsets for ő, ű).
