@@ -76,7 +76,8 @@ export function ControlsPanel(props: Props) {
   const v2 = escapeSpeed(body, r);
   const vMax = maxLaunchSpeed(params);
   const kind = classifyTrajectory({ x: 0, y: r, vx: params.v0, vy: 0 }, body);
-  const dragMatters = params.drag && !!body.atmosphere && params.altitude < body.atmosphere.cutoff;
+  // Below ~150 km real air stops the ball within one orbit; higher up the orbit only decays slowly.
+  const dragMatters = params.drag && !!body.atmosphere && params.altitude < 150_000;
   const kmh = (v: number) => fmt(v / 1000, lang, 2);
 
   return (

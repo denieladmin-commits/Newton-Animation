@@ -11,14 +11,14 @@ in the browser and show them in Hungarian.*
 | Point-mass cannonball | The ball's size is negligible compared with the planet. |
 | Spherical, **non-rotating** planet | Newton's thought experiment ignores rotation. Side effect: surface g on the model Earth is **9,82 m/s²**; the textbook 9,81 m/s² already includes the centrifugal effect of rotation. |
 | Only the planet's gravity (no Moon or Sun) | Their pull on the ball is under 0,01 % of Earth's. |
-| Air drag: exponential atmosphere, constant C_d = 0,5, 10 kg iron sphere (r ≈ 6,7 cm) | A real ball at Mach 20+ heats and ablates; the model shows the essential point: in air it slows down almost at once and never reaches orbit. |
+| Air drag: F = ½ρC_d(M)Av²; U.S. Standard Atmosphere 1976 (Earth, 0–1000 km), NASA GRC model (Mars); sphere C_d from Mach number; 10 kg iron sphere (r ≈ 6,7 cm) | No heating/ablation, wind or solar-activity changes of the upper atmosphere. The essential point holds: in air the ball slows down almost at once and never reaches orbit. |
 
 ## Constants
 | Quantity | Earth | Moon | Mars | Source |
 |---|---|---|---|---|
 | GM (m³/s²) | 3,986004·10¹⁴ | 4,9028·10¹² | 4,282837·10¹³ | NASA planetary fact sheets |
 | R (km), mean | 6371,0 | 1737,4 | 3389,5 | NASA planetary fact sheets |
-| Atmosphere ρ₀ (kg/m³), H (km), cutoff (km) | 1,225; 8,5; 100 | none | 0,020; 11,1; 80 | US Standard Atmosphere fit; NASA Mars fact sheet |
+| Atmosphere | U.S. Standard Atmosphere 1976 table, 0–1000 km | none | ρ = p/(0,1921·T), NASA GRC curve fit | NOAA/NASA/USAF 1976; NASA Glenn Research Center |
 | G (N·m²/kg²) | 6,6743·10⁻¹¹ | | | CODATA 2018 |
 
 ## Checks (all passing)
@@ -40,8 +40,10 @@ in the browser and show them in Hungarian.*
 | 13 | Energy and angular momentum without drag | constant | < 10⁻⁸ per orbit (measured ≈ 6·10⁻¹⁴ over 10 orbits) |
 | 14 | Halving the time step | error ÷ 16 (4th-order method) | ratio 13–19 |
 | 15 | With drag: energy only decreases; loss = work done by drag | balance | 10⁻⁶ |
-| 16 | From Everest at v₁ with air: speed halves within 2 s, ball lands | — | measured: 7,9 → 3,6 km/s after 1 s, lands 26 km away |
-| 17 | Moon: drag toggle changes nothing; Earth drag is zero above 100 km | — | exact |
+| 16 | From Everest at v₁ with air: speed halves within 2 s, ball lands | — | measured: halves in 0,43 s, 2,3 km/s after 1 s, lands 16 km away after 68 s at ≈ 160 m/s |
+| 17 | Moon: drag toggle changes nothing; Earth drag tiny at 400 km (< 10⁻⁶ g), zero above 1000 km | — | exact |
+| 17b | Air density equals the U.S. Standard Atmosphere 1976 table at 0 / 10 / 30 / 100 / 400 km; decreases monotonically; ≈ 0,47 kg/m³ at 8,85 km | 1,225 / 0,4135 / 0,01841 / 5,604·10⁻⁷ / 2,803·10⁻¹² kg/m³ | 10⁻⁶ |
+| 17c | Speed of sound 340,3 m/s at sea level, 295,1 m/s at 15 km; sphere C_d 0,47 → 0,8 (Mach 1) → 0,92 (Mach 25) | — | 0,5 m/s / 0,01 |
 | 18 | F_g always points at the planet's centre | — | < 0,01° (random positions) |
 | 19 | v_r and v_t combine exactly to v | — | 10⁻⁹ (random states) |
 | 20 | 90° marker: always on in a circular orbit; on an ellipse only at periapsis/apoapsis | — | ±0,5° |

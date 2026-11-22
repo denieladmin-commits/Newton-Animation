@@ -4,12 +4,14 @@
  * Model (stated openly in the app's "About the model" box):
  *  - 2D, planet centred at the origin, spherical and non-rotating;
  *  - the cannonball is a point mass; only the planet's gravity acts (+ optional drag);
- *  - drag: F = ½·ρ·C_d·A·v², opposite to the velocity, exponential atmosphere.
+ *  - drag: F = ½·ρ·C_d(M)·A·v², opposite to the velocity; U.S. Standard Atmosphere 1976
+ *    (Earth) / NASA GRC model (Mars); sphere drag coefficient depends on the Mach number.
  *
  * Units are SI throughout (m, s, kg). Energies are tracked per unit mass (J/kg)
  * and multiplied by the cannonball's mass only for display.
  */
 import { airDensity, type Body } from './bodies';
+import { sphereDragCoefficient } from './atmosphere';
 
 /** Simulation state. `w` is the work done by drag per unit mass (J/kg, ≤ 0). */
 export interface State {
@@ -24,8 +26,6 @@ export interface State {
 export interface Projectile {
   /** Mass m (kg). */
   mass: number;
-  /** Drag coefficient C_d (dimensionless). */
-  dragCoefficient: number;
   /** Cross-section area A (m²). */
   area: number;
 }
@@ -35,7 +35,7 @@ const IRON_DENSITY = 7_870; // kg/m³
 /** A solid iron sphere of the given mass. */
 export function ironCannonball(mass: number): Projectile {
   const radius = Math.cbrt((3 * mass) / (4 * Math.PI * IRON_DENSITY));
-  return { mass, dragCoefficient: 0.5, area: Math.PI * radius * radius };
+  return { mass, area: Math.PI * radius * radius };
 }
 
 /** Default: 10 kg iron ball (radius ≈ 6.7 cm). */
@@ -63,11 +63,13 @@ export function forces(s: State, env: Environment): Forces {
   const gOverR = -env.body.GM / (r2 * r);
   const out: Forces = { gx: gOverR * s.x, gy: gOverR * s.y, dx: 0, dy: 0 };
   if (env.drag && env.body.atmosphere) {
-    const rho = airDensity(env.body, r - env.body.radius);
+    const h = r - env.body.radius;
+    const rho = airDensity(env.body, h);
     if (rho > 0) {
       const p = env.projectile;
       const v = Math.hypot(s.vx, s.vy);
-      const k = (0.5 * rho * p.dragCoefficient * p.area * v) / p.mass;
+      const cd = sphereDragCoefficient(v / env.body.atmosphere.model.soundSpeed(h));
+      const k = (0.5 * rho * cd * p.area * v) / p.mass;
       out.dx = -k * s.vx;
       out.dy = -k * s.vy;
     }

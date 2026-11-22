@@ -125,7 +125,7 @@ function drawPlanetDisk(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, 
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 5]);
       ctx.beginPath();
-      ctx.arc(ox, oy, Rpx + Math.max(4, body.atmosphere.cutoff * cam.scale), 0, Math.PI * 2);
+      ctx.arc(ox, oy, Rpx + Math.max(4, body.atmosphere.karman * cam.scale), 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.globalAlpha = 1;
@@ -141,7 +141,7 @@ function drawPlanetDisk(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, 
   if (style.glow && body.atmosphere) {
     const [r, g, b] = style.glow;
     // Glow is at least 6 px wide so it stays visible; real thickness when zoomed in.
-    const thick = Math.max(6, body.atmosphere.cutoff * cam.scale);
+    const thick = Math.max(6, body.atmosphere.karman * cam.scale);
     const grad = ctx.createRadialGradient(ox, oy, Math.max(0, Rpx - 2), ox, oy, Rpx + thick * 2.5);
     grad.addColorStop(0, `rgba(${r},${g},${b},0.7)`);
     grad.addColorStop(0.3, `rgba(${r},${g},${b},0.22)`);
@@ -212,14 +212,14 @@ function drawLocalSurface(ctx: CanvasRenderingContext2D, cam: Camera, body: Body
     ctx.fillStyle = hatch(ctx, t.ink, 0.28, 4.5, angle + 45);
     bandPath(R, R - Math.min(depth, 18 / cam.scale));
     ctx.fill();
-    if (body.atmosphere && body.atmosphere.cutoff * cam.scale < 4 * cam.height) {
+    if (body.atmosphere && body.atmosphere.karman * cam.scale < 4 * cam.height) {
       ctx.strokeStyle = t.ink;
       ctx.globalAlpha = 0.45;
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 5]);
       ctx.beginPath();
       for (let i = 0; i <= N; i++) {
-        const [x, y] = pt(theta0 - span + (2 * span * i) / N, R + body.atmosphere.cutoff);
+        const [x, y] = pt(theta0 - span + (2 * span * i) / N, R + body.atmosphere.karman);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -238,7 +238,7 @@ function drawLocalSurface(ctx: CanvasRenderingContext2D, cam: Camera, body: Body
   if (style.glow && body.atmosphere) {
     const atm = body.atmosphere;
     const [gr, gg, gb] = style.glow;
-    const top = Math.min(atm.cutoff, 6 * atm.scaleHeight);
+    const top = Math.min(atm.karman, 6 * atm.scaleHeight);
     const [ax, ay] = pt(theta0, R);
     const [bx, by] = pt(theta0, R + top);
     const grad = ctx.createLinearGradient(ax, ay, bx, by);

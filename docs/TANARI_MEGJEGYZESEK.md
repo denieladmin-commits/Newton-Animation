@@ -64,19 +64,22 @@ A betűvel jelölt korábbi lövések (A, B, C…) azért maradnak a képen, hog
 ## Légellenállás
 
 **13. Miért áll meg szinte azonnal a golyó, ha be van kapcsolva a légellenállás?**
-Mert ez a valóság. Az Everest magasságában a levegő sűrűsége a tengerszintinek kb. harmada, a golyó pedig a hangsebesség kb. 25-szörösével halad. A közegellenállási erő a sebesség négyzetével nő: a 10 kg-os golyóra kb. 96 000 N fékezőerő hat, ez a súlyának kb. 980-szorosa. A golyó kb. 1 másodperc alatt veszíti el sebessége felét, és kb. 26 km-re csapódik be. Ezért Newton „hegye” idealizálás, és ezért keringenek a műholdak a légkör felett.
+Mert ez a valóság. Az Everest magasságában a levegő sűrűsége a tengerszintinek kb. harmada, a golyó pedig a hangsebesség kb. 25-szörösével halad. A közegellenállási erő a sebesség négyzetével nő: a 10 kg-os golyóra a kilövéskor kb. 192 000 N fékezőerő hat, ez a súlyának kb. 2000-szerese. A golyó 0,43 másodperc alatt veszíti el sebessége felét, kb. 68 s múlva, 16 km-re csapódik be, már csak kb. 160 m/s sebességgel (ez közel van a zuhanó golyó végsebességéhez). Ezért Newton „hegye” idealizálás, és ezért keringenek a műholdak a légkör felett.
 
 **14. Mennyire pontos a légellenállás modellje?**
-Egyszerűsített, de nagyságrendileg helyes:
-- a légkör sűrűsége exponenciálisan csökken a magassággal (skálamagasság 8,5 km);
-- a légellenállási tényező állandó (C_d = 0,5). Ennyi sebességnél a valódi érték inkább 0,9–1, vagyis a valóságban a fékezés még erősebb lenne;
-- a golyó felhevülését, olvadását nem modellezzük.
+A szabványos referenciaadatokat használja:
+- a közegellenállási erő F = ½·ρ·C_d·A·v², a sebességgel ellentétes irányú;
+- a levegő sűrűsége a Földön az U.S. Standard Atmosphere 1976 (nemzetközi referencia-légkör) táblázatából jön 0 és 1000 km között, a Marson a NASA Glenn Kutatóközpont Mars-légkörmodelljéből;
+- a gömb légellenállási tényezője a sebességtől függ (a hangsebességhez viszonyítva): lassan kb. 0,47, a hangsebesség felett kb. 1,0, nagyon nagy sebességnél kb. 0,92. A hangsebességet a magasságnak megfelelő hőmérsékletből számolja;
+- a golyó felhevülését, olvadását, a szelet és a napaktivitás hatását (amely a felső légkör sűrűségét többszörösére is változtathatja) nem modellezzük.
 
-**15. Miért nincs légellenállás 100 km felett?**
-A 100 km-es Kármán-vonalat szokás a világűr határának tekinteni. A modell e fölött a sűrűséget nullának veszi. A valóságban a légkör nyomokban 400 km-en is jelen van: az ISS emiatt havonta kb. 2 km-t süllyed, és rendszeresen meg kell emelni a pályáját.
+Egy korábbi változat egyetlen exponenciális görbét és állandó C_d = 0,5-öt használt. Ez 30 km fölött 2–17-szer sűrűbb levegőt adott a valóságosnál, hangsebesség felett pedig kb. feleakkora fékezést. Ezt a referenciaadatokra cseréltük; az értékeket automatikus tesztek ellenőrzik a táblázat ellen.
+
+**15. Van légellenállás 100 km felett?**
+Van, csak nagyon kicsi. A 100 km-es Kármán-vonalat (a képen szaggatott kör) szokás a világűr határának tekinteni, de a légkör nem ér itt véget: 400 km-en a sűrűség kb. 2,8·10⁻¹² kg/m³. A modell 1000 km-ig számol vele. Az ISS magasságában a golyó légellenállással keringésenként kb. 1 m-t süllyed. A valódi ISS, amely a tömegéhez képest sokkal nagyobb felületű, kb. 4 m-t süllyed keringésenként (havonta kb. 2 km-t), ezért rendszeresen meg kell emelni a pályáját.
 
 **16. Miért nincs légellenállás-kapcsoló a Holdon?**
-A Holdnak nincs légköre. A Marsé van, de a földinek kb. 1/60-a sűrűségű.
+A Holdnak nincs légköre. A Marsé van, de a felszínen is csak kb. 0,015 kg/m³ sűrűségű, a földinek kb. 1/80-a. A Mars Everest-magasságú hegyéről v₁-gyel lőve a golyó így is kb. 215 km-re csapódik be.
 
 ## Mozgás és energia
 
@@ -101,7 +104,7 @@ Nem. A gyorsítás csak azt szabja meg, hogy a valós idő egy másodperce alatt
 A program a negyedrendű Runge–Kutta (RK4) módszerrel számol. Ellenőrzésképp a pontos, képlettel számolt Kepler-pályával vetjük össze: egy harmadkörnyi ellipszispálya után az eltérés 0,016 mm. Az összenergia 10 keringés alatt 10⁻¹³ nagyságrendű relatív hibával marad állandó. A részleteket és a futtatható ellenőrzéseket lásd: [VALIDATION.md](VALIDATION.md).
 
 **23. Honnan származnak az állandók?**
-A NASA bolygó-adatlapjairól (Planetary Fact Sheets): GM, átlagos sugár, a légkör sűrűsége és skálamagassága. A G értéke CODATA 2018.
+A NASA bolygó-adatlapjairól (Planetary Fact Sheets): GM és átlagos sugár. A földi légkör: U.S. Standard Atmosphere 1976; a marsi légkör: NASA Glenn Research Center Mars-modell; a gömb légellenállási tényezője: szabványos ballisztikai adatok (Hoerner, 1965). A G értéke CODATA 2018.
 
 ## Vektorok és megjelenítés
 

@@ -291,12 +291,15 @@ describe('air drag (realistic, on/off)', () => {
     expect(a.state).toEqual(b.state);
   });
 
-  it('drag above the Kármán line (100 km) is zero in the model', () => {
+  it('real air thins out but does not stop at 100 km: tiny drag at 400 km, none above 1000 km', () => {
     const env: Environment = { body: earth, drag: true, projectile: DEFAULT_PROJECTILE };
-    const s: State = { t: 0, x: 0, y: earth.radius + 100_001, vx: 7800, vy: 0, w: 0 };
-    const fr = forces(s, env);
-    expect(fr.dx).toBe(0);
-    expect(fr.dy).toBe(0);
+    const at = (h: number) => {
+      const fr = forces({ t: 0, x: 0, y: earth.radius + h, vx: 7700, vy: 0, w: 0 }, env);
+      return Math.hypot(fr.dx, fr.dy);
+    };
+    expect(at(400_000)).toBeGreaterThan(0);
+    expect(at(400_000)).toBeLessThan(1e-5); // < one millionth of g
+    expect(at(1_000_001)).toBe(0);
   });
 });
 
