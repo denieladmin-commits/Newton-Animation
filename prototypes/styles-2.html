@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stílusok, 2. kör · Newton ágyúgolyója</title>
+<!-- Prototype only: the final app embeds its fonts so it stays offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,500;1,6..72,600&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg: #14171c; --ink: #e9e7e1; --muted: #9a9890; --line: #2b2f36; --pick: #e8b44c; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 'Instrument Sans', system-ui, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 44px 0 12px; }
+  h1 { font: 500 30px/1.2 'Newsreader', serif; font-style: italic; margin: 0 0 10px; }
+  header p { color: var(--muted); margin: 0; max-width: 68ch; }
+  .opt { display: block; width: 100%; margin: 28px 0 0; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .opt figure { margin: 0; border-radius: 10px; overflow: hidden; outline: 2px solid var(--line); outline-offset: 0; transition: outline-color .15s; }
+  .opt:hover figure { outline-color: #4a505b; }
+  .opt:focus-visible figure { outline: 3px solid var(--pick); outline-offset: 3px; }
+  .opt[aria-pressed="true"] figure { outline: 3px solid var(--pick); }
+  .opt svg { display: block; width: 100%; height: auto; }
+  .cap { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; padding: 14px 4px 0; }
+  .cap .letter { grid-row: span 2; font: italic 500 34px/1 'Newsreader', serif; color: var(--muted); }
+  .opt[aria-pressed="true"] .cap .letter { color: var(--pick); }
+  .cap b { font-weight: 600; font-size: 17px; }
+  .cap span { color: var(--muted); max-width: 78ch; }
+  footer { position: sticky; bottom: 0; margin-top: 40px; padding: 14px 0; background: rgba(20,23,28,.95); border-top: 1px solid var(--line); }
+  footer em { color: var(--pick); font-style: normal; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Newton ágyúgolyója, stílusok második köre</h1>
+    <p>Mind a négy változat a már kiválasztott elemekkel készült: jelenlegi listás panel, vékony tankönyvi nyilak, vízszintes energiasávok. A jelenet valódi méretarányú: lövések az ISS magasságából (400 km), az A, B, C becsapódási pontok a pontos számított helyükön vannak, a golyó körpályán kering.</p>
+  </header>
+  <div id="list"></div>
+</div>
+<footer><div class="wrap" id="summary">Kattints arra a stílusra, amelyik a legjobban tetszik.</div></footer>
+
+<script>
+// ─────────────── geometry (true scale: R = 6371 km → 380 px) ───────────────
+const CW = 600, CH = 540;                    // canvas area of the mock
+const R = 380, P = { cx: 300, cy: 590 };
+const k = R / 6371;                          // px per km
+const ORB = R + 400 * k;                     // 400 km orbit
+const deg = d => d * Math.PI / 180;
+const onCircle = (r, a) => [P.cx + r * Math.sin(deg(a)), P.cy - r * Math.cos(deg(a))];
+const TH = 30;
+const [bx, by] = onCircle(ORB, TH);
+const V = [Math.cos(deg(TH)), Math.sin(deg(TH))];      // tangent (clockwise)
+const F = [-Math.sin(deg(TH)), Math.cos(deg(TH))];     // towards the centre
+// landing angles from 400 km (Kepler): 4,0 km/s → 1382 km, 6,0 → 2856 km, 7,0 → 5171 km
+const LAND = [['A', 1382], ['B', 2856], ['C', 5171]].map(([l, km]) => [l, km / 6371 * 180 / Math.PI]);
+const cannonY = P.cy - ORB;
+
+const arc = (r, a0, a1) => { const [x0, y0] = onCircle(r, a0), [x1, y1] = onCircle(r, a1);
+  return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+const fall = a => { const [ex, ey] = onCircle(R, a); return `M${P.cx} ${cannonY} Q ${P.cx + (ex - P.cx) * 0.55} ${cannonY - 2} ${ex.toFixed(1)} ${ey.toFixed(1)}`; };
+
+function arrowhead(x, y, dx, dy, size, color, open = false) {
+  const hx = x - dx * size, hy = y - dy * size, nx = -dy * size * 0.42, ny = dx * size * 0.42;
+  return open
+    ? `<path d="M${hx + nx} ${hy + ny} L${x} ${y} L${hx - nx} ${hy - ny}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/>`
+    : `<path d="M${x} ${y} L${hx + nx} ${hy + ny} Q ${hx + dx * size * .25} ${hy + dy * size * .25} ${hx - nx} ${hy - ny}Z" fill="${color}"/>`;
+}
+function vector(x, y, d, len, color, w, head, open) {
+  const x2 = x + d[0] * len, y2 = y + d[1] * len;
+  return `<line x1="${x}" y1="${y}" x2="${x2 - d[0] * head * .6}" y2="${y2 - d[1] * head * .6}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>${arrowhead(x2, y2, d[0], d[1], head, color, open)}`;
+}
+const vecLetter = (x, y, l, c, font, size = 24) => `<text x="${x}" y="${y}" font-family="${font}" font-style="italic" font-size="${size}" fill="${c}">${l}</text>
+  <line x1="${x + 2}" y1="${y - size * .78}" x2="${x + size * .55}" y2="${y - size * .78}" stroke="${c}" stroke-width="1.3"/>${arrowhead(x + size * .62, y - size * .78, 1, 0, 5, c)}`;
+const rightAngle = (s, c, w) => { const a = [bx + V[0] * s, by + V[1] * s], b = [bx + F[0] * s, by + F[1] * s], m = [a[0] + F[0] * s, a[1] + F[1] * s];
+  return `<path d="M${a} L${m} L${b}" fill="none" stroke="${c}" stroke-width="${w}"/>`; };
+function mountain(t) {               // Newton's mountain, 400 km high, true scale
+  const pts = [];
+  for (let i = 0; i <= 40; i++) { const u = -1 + i / 20, h = 400 * k * Math.pow(1 - Math.abs(u), 1.3) * (1 + .06 * Math.sin(9 * u) * Math.abs(u));
+    pts.push(onCircle(R + h - 1, u * 3.6).map(n => n.toFixed(1)).join(' ')); }
+  return `<path d="M${pts.join(' L')} Z" fill="${t.mountain}" stroke="${t.ink}" stroke-width="${t.hair}" ${t.hatchMountain ? `style="fill:url(#hm-${t.id})"` : ''}/>`;
+}
+function cannon(t) {
+  return `<g transform="translate(${P.cx} ${cannonY})"><rect x="-17" y="-4.5" width="17" height="9" rx="2" fill="${t.cannonFill}" stroke="${t.ink}" stroke-width="${t.hair}"/>
+    <circle cx="-10" cy="5" r="4.5" fill="${t.cannonFill}" stroke="${t.ink}" stroke-width="${t.hair}"/></g>`;
+}
+
+// ─────────────── one full mock: canvas + panel ───────────────
+const MW = 1000, MH = 560, PX = 620;          // mock size, panel x
+const fmt = n => n.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function mock(t) {
+  const u = t.ui, m = t.math;
+  const label = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-family="${o.font ?? u}" font-size="${o.size ?? 14}" font-weight="${o.w ?? 400}" fill="${o.c ?? t.panelInk}" ${o.anchor ? `text-anchor="${o.anchor}"` : ''} ${o.italic ? 'font-style="italic"' : ''} style="font-variant-numeric: tabular-nums">${s}</text>`;
+  const sym = (x, y, base, sub, c = t.panelInk, size = 17) => `<text x="${x}" y="${y}" font-family="${m}" font-style="italic" font-size="${size}" fill="${c}">${base}<tspan font-size="${size * .68}" dy="4">${sub}</tspan></text>`;
+  const slider = (y, f) => `<line x1="${PX + 28}" y1="${y}" x2="${MW - 28}" y2="${y}" stroke="${t.rule}" stroke-width="${t.sliderW}" stroke-linecap="round"/>
+    <line x1="${PX + 28}" y1="${y}" x2="${PX + 28 + (MW - PX - 56) * f}" y2="${y}" stroke="${t.control ?? t.vel}" stroke-width="${t.sliderW}" stroke-linecap="round"/>
+    <circle cx="${PX + 28 + (MW - PX - 56) * f}" cy="${y}" r="${t.knob}" fill="${t.panelBg}" stroke="${t.control ?? t.vel}" stroke-width="2.5"/>`;
+  const chip = (x, y, w, text, on) => `<rect x="${x}" y="${y}" width="${w}" height="40" rx="${t.radius}" fill="${on ? t.chipOn : 'none'}" stroke="${on ? t.chipOnLine : t.rule}" stroke-width="${on ? 1.6 : 1.2}"/>
+    ${label(x + w / 2, y + 25.5, text, { anchor: 'middle', size: 14.5, w: on ? 600 : 400, c: on ? t.chipOnInk : t.panelMuted })}`;
+  // energy bars (horizontal, signed, zero line)
+  const ez = PX + 240, ek = 78 / 6e8;
+  const ebar = (y, base, sub, name, v, c) => `${sym(PX + 28, y + 15, base, sub, c, 18)}${label(PX + 58, y + 15, name, { size: 13, c: t.panelMuted })}
+    <rect x="${v >= 0 ? ez : ez + v * ek}" y="${y}" width="${Math.abs(v * ek)}" height="20" rx="${Math.min(t.radius, 3)}" fill="${c}" fill-opacity="${t.barOpacity}"/>`;
+  const sky = t.sky ? t.sky : '';
+  return `<svg viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${t.name}">
+    <defs>${t.defs ?? ''}<clipPath id="cv-${t.id}"><rect width="${PX}" height="${MH}"/></clipPath></defs>
+    <rect width="${MW}" height="${MH}" fill="${t.bg}"/>
+    <g clip-path="url(#cv-${t.id})" ${t.chalk ? `filter="url(#chalk-${t.id})"` : ''}>
+      ${sky}
+      ${t.grid ?? ''}
+      ${t.planet(t)}
+      ${mountain(t)}
+      ${LAND.map(([l, a], i) => { const [ex, ey] = onCircle(R + 16, a);
+        return `<path d="${fall(a)}" fill="none" stroke="${t.ghost}" stroke-width="${t.ghostW}" ${t.ghostDash ? `stroke-dasharray="${t.ghostDash}"` : ''}/>
+          <circle cx="${onCircle(R, a)[0]}" cy="${onCircle(R, a)[1]}" r="2.6" fill="${t.ghost}"/>
+          <text x="${ex}" y="${ey + 6}" text-anchor="middle" font-family="${m}" font-style="italic" font-size="19" fill="${t.ghostInk}">${l}</text>`; }).join('')}
+      <path d="${arc(ORB, 0, TH)}" fill="none" stroke="${t.trail}" stroke-width="${t.trailW}" stroke-linecap="round"/>
+      <path d="${arc(ORB, TH, 359)}" fill="none" stroke="${t.trail}" stroke-width="1" stroke-opacity=".45" stroke-dasharray="2 6"/>
+      ${cannon(t)}
+      <line x1="${bx - V[0] * 70}" y1="${by - V[1] * 70}" x2="${bx + V[0] * 150}" y2="${by + V[1] * 150}" stroke="${t.ink}" stroke-opacity=".28" stroke-dasharray="4 4"/>
+      <line x1="${bx}" y1="${by}" x2="${P.cx}" y2="${P.cy}" stroke="${t.ink}" stroke-opacity=".16" stroke-dasharray="4 4"/>
+      ${vector(bx, by, V, 96, t.vel, t.vecW, t.head, t.openHead)}
+      ${vector(bx, by, F, 80, t.force, t.vecW, t.head, t.openHead)}
+      ${rightAngle(12, t.ink, t.hair)}
+      ${vecLetter(bx + V[0] * 104 + 4, by + V[1] * 104 + 8, 'v', t.vel, m, t.letterSize)}
+      ${vecLetter(bx + F[0] * 86 - 26, by + F[1] * 86 + 14, 'F', t.force, m, t.letterSize)}
+      <circle cx="${bx}" cy="${by}" r="${t.ballR}" fill="${t.ball}" stroke="${t.ballStroke}" stroke-width="1.4"/>
+      ${t.caption(t)}
+    </g>
+    <!-- status -->
+    <rect x="22" y="22" width="${t.statusW}" height="62" rx="${t.radius}" fill="${t.statusBg}" stroke="${t.rule}" stroke-width="1"/>
+    ${label(38, 47, '1. kör kész, keringési idő 92 perc 24 mp', { size: 15, w: 600, c: t.statusInk })}
+    ${label(38, 70, 'h = 400 km   v = 7,67 km/s   t = 1 óra 32 perc', { size: 13.5, c: t.statusMuted })}
+    <!-- panel -->
+    <rect x="${PX}" width="${MW - PX}" height="${MH}" fill="${t.panelBg}"/>
+    <line x1="${PX}" x2="${PX}" y2="${MH}" stroke="${t.rule}"/>
+    ${t.title(PX + 28, 50)}
+    <rect x="${PX + 28}" y="72" width="${MW - PX - 56}" height="46" rx="${t.radius}" fill="${t.fire}"/>
+    ${label(PX + (MW - PX) / 2, 101, 'Tűz!', { anchor: 'middle', size: 17, w: 700, c: t.fireInk })}
+    ${label(PX + 28, 152, 'Égitest', { size: 14, w: 600 })}
+    ${chip(PX + 28, 162, 102, 'Föld', true)}${chip(PX + 139, 162, 102, 'Hold', false)}${chip(PX + 250, 162, 102, 'Mars', false)}
+    ${label(PX + 28, 236, 'Hegy magassága', { size: 14, w: 600 })}${label(MW - 28, 236, 'h = 400 km', { anchor: 'end', size: 14.5 })}
+    ${slider(256, .86)}
+    ${label(PX + 28, 300, 'Kezdősebesség', { size: 14, w: 600 })}${label(MW - 28, 300, 'v₀ = 7,67 km/s', { anchor: 'end', size: 14.5 })}
+    ${slider(320, .55)}
+    ${chip(PX + 28, 338, 157, 'v₁ = 7,67 km/s', true)}${chip(PX + 195, 338, 157, 'v₂ = 10,85 km/s', false)}
+    ${label(PX + 28, 414, 'Energia', { size: 14, w: 600 })}${label(MW - 28, 414, '10 kg-os golyó', { anchor: 'end', size: 12.5, c: t.panelMuted })}
+    <line x1="${ez}" y1="424" x2="${ez}" y2="522" stroke="${t.panelInk}" stroke-width="1.2"/>
+    ${ebar(428, 'E', 'k', 'mozgási', 2.94e8, t.control ?? t.vel)}${ebar(460, 'E', 'p', 'helyzeti', -5.89e8, t.potential)}${ebar(492, 'E', '', 'teljes', -2.95e8, t.total)}
+    ${label(MW - 28, 444, '+2,94·10⁸ J', { anchor: 'end', size: 12.5, c: t.panelMuted })}${label(MW - 28, 476, '−5,89·10⁸ J', { anchor: 'end', size: 12.5, c: t.panelMuted })}${label(MW - 28, 508, '−2,95·10⁸ J', { anchor: 'end', size: 12.5, c: t.panelMuted })}
+    ${label(PX + 28, 546, 'E < 0, ezért a golyó a bolygó körül marad.', { size: 13, c: t.panelMuted, italic: !!t.italicNote })}
+  </svg>`;
+}
+
+// ─────────────── the four styles ───────────────
+const hatch = (id, c, op, gap = 5, angle = 45) => `<pattern id="${id}" width="${gap}" height="${gap}" patternUnits="userSpaceOnUse" patternTransform="rotate(${angle})"><line x1="0" y1="0" x2="0" y2="${gap}" stroke="${c}" stroke-opacity="${op}" stroke-width="1"/></pattern>`;
+const squareGrid = (c, op, s = 24) => `<g stroke="${c}" stroke-opacity="${op}" stroke-width="1">${Array.from({ length: Math.ceil(PX / s) + 1 }, (_, i) => `<line x1="${i * s}" y1="0" x2="${i * s}" y2="${CH + 40}"/>`).join('')}${Array.from({ length: Math.ceil(MH / s) + 1 }, (_, i) => `<line x1="0" y1="${i * s}" x2="${PX}" y2="${i * s}"/>`).join('')}</g>`;
+const polarRings = (c, op) => `<g fill="none" stroke="${c}" stroke-opacity="${op}">${[1.16, 1.32, 1.48, 1.64].map(f => `<circle cx="${P.cx}" cy="${P.cy}" r="${R * f}"/>`).join('')}${[-40, -20, 20, 40].map(a => { const [x, y] = onCircle(R * 1.8, a); return `<line x1="${P.cx}" y1="${P.cy}" x2="${x}" y2="${y}"/>`; }).join('')}</g>`;
+const figCaption = (t, text) => `<text x="22" y="${MH - 22}" font-family="${t.math}" font-size="15" fill="${t.ink}" fill-opacity=".75"><tspan font-style="italic">1. ábra.</tspan> ${text}</text>`;
+const stars = (n, c) => { let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  return Array.from({ length: n }, () => `<circle cx="${(r() * PX).toFixed(1)}" cy="${(r() * 420).toFixed(1)}" r="${(.4 + r() * .8).toFixed(2)}" fill="${c}" opacity="${(.2 + r() * .55).toFixed(2)}"/>`).join(''); };
+
+const STYLES = [
+  { id: 'a', name: 'Tankönyv, metszetstílusban', desc: 'A tetszett tankönyvi ábra továbbfejlesztve, Newton 1728-as rézmetszete alapján: vonalkázott bolygó és hegy, dőlt betűs A, B, C jelölések, ábraaláírás, hűvösebb papírszín. Világos teremben és nyomtatva a legjobb.',
+    bg: '#eceee8', ink: '#1d2838', hair: 1.2, ui: 'EB Garamond', math: 'EB Garamond', mountain: '#eceee8', hatchMountain: true, cannonFill: '#eceee8',
+    defs: hatch('hp-a', '#1d2838', .32, 5, 35) + hatch('hm-a', '#1d2838', .55, 3.2, -35),
+    grid: squareGrid('#1d2838', .06),
+    planet: t => `<circle cx="${P.cx}" cy="${P.cy}" r="${R}" fill="url(#hp-a)" stroke="${t.ink}" stroke-width="1.6"/><circle cx="${P.cx}" cy="${P.cy}" r="${R - 6}" fill="none" stroke="${t.ink}" stroke-opacity=".35"/>`,
+    ghost: '#1d2838', ghostW: 1, ghostDash: '5 4', ghostInk: '#1d2838', trail: '#1f4e9c', trailW: 2.2,
+    vel: '#1f4e9c', force: '#a3262a', vecW: 2, head: 13, letterSize: 26, ball: '#1d2838', ballStroke: '#eceee8', ballR: 5,
+    caption: t => figCaption(t, 'Lövések 400 km magasról; valódi méretarány.'),
+    statusBg: '#f6f7f3', statusInk: '#1d2838', statusMuted: '#4f5a68', statusW: 360, radius: 3,
+    panelBg: '#f6f7f3', panelInk: '#1d2838', panelMuted: '#5d6672', rule: '#c9cdc4', chipOn: '#e1e7f1', chipOnLine: '#1f4e9c', chipOnInk: '#1d2838',
+    sliderW: 3, knob: 8, fire: '#1d2838', fireInk: '#f6f7f3', potential: '#5b4a8b', total: '#a3262a', barOpacity: .9, italicNote: true,
+    title: (x, y) => `<text x="${x}" y="${y}" font-family="EB Garamond" font-size="27" fill="#1d2838"><tspan font-style="italic">Newton</tspan> ágyúgolyója</text>` },
+
+  { id: 'b', name: 'Mélyűr, ábraként rajzolva', desc: 'A sötét űrhangulat megmarad, de fényudvar helyett precíz vonalak: finom polárkoordináta-háló, krétafehér rajzolat, dőlt képletbetűk, ábraaláírás. Sötétített teremben látványos, mégis tankönyvszerűen pontos.',
+    bg: '#0e1a2b', ink: '#e8e4d8', hair: 1.1, ui: 'Instrument Sans', math: 'Newsreader', mountain: '#2a3446', cannonFill: '#0e1a2b',
+    defs: `<radialGradient id="pl-b" cx="42%" cy="18%" r="70%"><stop offset="0" stop-color="#2b5d8f"/><stop offset="1" stop-color="#14304f"/></radialGradient>` + hatch('hm-b', '#e8e4d8', .35, 3.4, -35),
+    hatchMountain: true,
+    sky: stars(90, '#e8e4d8'), grid: polarRings('#e8e4d8', .09),
+    planet: t => `<circle cx="${P.cx}" cy="${P.cy}" r="${R + 100 * k}" fill="none" stroke="#7fb6e8" stroke-opacity=".5" stroke-dasharray="2 4"/><circle cx="${P.cx}" cy="${P.cy}" r="${R}" fill="url(#pl-b)" stroke="${t.ink}" stroke-opacity=".8" stroke-width="1.3"/>`,
+    ghost: '#c9b8f0', ghostW: 1.2, ghostDash: '5 4', ghostInk: '#e8e4d8', trail: '#6cc4f5', trailW: 2.2,
+    vel: '#6cc4f5', force: '#f08a7e', vecW: 2.2, head: 13, letterSize: 26, ball: '#e8e4d8', ballStroke: '#0e1a2b', ballR: 5,
+    caption: t => figCaption(t, 'Lövések 400 km magasról; a szaggatott kör a Kármán-vonal.'),
+    statusBg: 'rgba(14,26,43,.85)', statusInk: '#e8e4d8', statusMuted: '#a9b3c2', statusW: 360, radius: 8,
+    panelBg: '#121f33', panelInk: '#e8e4d8', panelMuted: '#9aa5b5', rule: '#2c3b52', chipOn: 'rgba(108,196,245,.14)', chipOnLine: '#6cc4f5', chipOnInk: '#e8e4d8',
+    sliderW: 3, knob: 8, fire: '#e8b44c', fireInk: '#0e1a2b', potential: '#b39ddb', total: '#e8b44c', barOpacity: .9,
+    title: (x, y) => `<text x="${x}" y="${y}" font-family="Newsreader" font-size="27" fill="#e8e4d8"><tspan font-style="italic">Newton</tspan> ágyúgolyója</text>` },
+
+  { id: 'c', name: 'Kivetítő, világos tankönyvi lap', desc: 'Fehér lap, nagyon vastag, tiszta vonalak és nagy, jól olvasható betűk (Atkinson Hyperlegible). Kivetítőn világos teremben a fehér alap olvasható a legjobban; a tankönyvi rend megmarad, csak minden nagyobb és erősebb.',
+    bg: '#ffffff', ink: '#111827', hair: 2, ui: 'Atkinson Hyperlegible', math: 'Newsreader', mountain: '#d6d3cd', cannonFill: '#ffffff',
+    grid: squareGrid('#111827', .07, 30),
+    planet: t => `<circle cx="${P.cx}" cy="${P.cy}" r="${R}" fill="#dbe7f5" stroke="${t.ink}" stroke-width="3"/>`,
+    ghost: '#6b7280', ghostW: 2.5, ghostDash: '7 5', ghostInk: '#111827', trail: '#0057d9', trailW: 4,
+    vel: '#0057d9', force: '#d1001c', vecW: 4.5, head: 18, letterSize: 32, ball: '#111827', ballStroke: '#ffffff', ballR: 7,
+    caption: t => `<text x="22" y="${MH - 22}" font-family="Atkinson Hyperlegible" font-size="17" font-weight="700" fill="#111827">1. ábra: lövések 400 km magasról</text>`,
+    statusBg: '#ffffff', statusInk: '#111827', statusMuted: '#374151', statusW: 380, radius: 6,
+    panelBg: '#f3f4f6', panelInk: '#111827', panelMuted: '#374151', rule: '#9ca3af', chipOn: '#dbeafe', chipOnLine: '#0057d9', chipOnInk: '#111827',
+    sliderW: 5, knob: 10, fire: '#0057d9', fireInk: '#ffffff', potential: '#6d28d9', total: '#d1001c', barOpacity: 1,
+    title: (x, y) => `<text x="${x}" y="${y}" font-family="Atkinson Hyperlegible" font-weight="700" font-size="26" fill="#111827">Newton ágyúgolyója</text>` },
+
+  { id: 'd', name: 'Tábla, krétával rajzolva', desc: 'Iskolai zöld tábla, enyhén szemcsés krétavonalak, sárga és piros kréta a vektorokhoz. Pont úgy néz ki, mintha a tanár a táblára rajzolta volna, csak mozog. Az alkalmazás felülete letisztult marad.',
+    bg: '#26372f', ink: '#ecebe3', hair: 1.4, ui: 'Atkinson Hyperlegible', math: 'Newsreader', mountain: '#26372f', hatchMountain: true, cannonFill: '#26372f', chalk: true,
+    defs: `<filter id="chalk-d" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feComposite in="d" in2="n" operator="arithmetic" k1="0" k2="1" k3="-.18" k4="0"/></filter>
+      <radialGradient id="smudge-d" cx="45%" cy="40%" r="70%"><stop offset="0" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></radialGradient>` + hatch('hm-d', '#ecebe3', .5, 4, -35) + hatch('hp-d', '#ecebe3', .14, 7, 30),
+    sky: `<rect width="${PX}" height="${MH}" fill="url(#smudge-d)"/>`,
+    planet: t => `<circle cx="${P.cx}" cy="${P.cy}" r="${R}" fill="url(#hp-d)" stroke="${t.ink}" stroke-width="2.2"/>`,
+    ghost: '#ecebe3', ghostW: 1.6, ghostDash: '6 5', ghostInk: '#ecebe3', trail: '#f4e27a', trailW: 2.8,
+    vel: '#f4e27a', force: '#f28b82', vecW: 2.8, head: 15, letterSize: 28, ball: '#ecebe3', ballStroke: '#26372f', ballR: 5.5,
+    caption: t => figCaption(t, 'Newton ágyúja a 400 km-es hegyen.'),
+    statusBg: 'rgba(38,55,47,.92)', statusInk: '#ecebe3', statusMuted: '#c8cbbf', statusW: 380, radius: 6,
+    panelBg: '#f2f1ec', panelInk: '#1f2a24', panelMuted: '#5a6359', rule: '#cfcdc3', chipOn: '#e4ece6', chipOnLine: '#2f6b4f', chipOnInk: '#1f2a24',
+    sliderW: 3, knob: 8, control: '#2f6b4f', fire: '#2f6b4f', fireInk: '#ffffff', potential: '#6a5a9c', total: '#b8433a', barOpacity: .9,
+    title: (x, y) => `<text x="${x}" y="${y}" font-family="Newsreader" font-size="27" fill="#1f2a24"><tspan font-style="italic">Newton</tspan> ágyúgolyója</text>` },
+];
+
+let pick = null;
+try { pick = localStorage.getItem('newton-style2'); } catch {}
+const list = document.getElementById('list');
+STYLES.forEach((t, i) => {
+  const svg = mock(t);
+  const b = document.createElement('button');
+  b.className = 'opt'; b.dataset.id = t.id; b.setAttribute('aria-pressed', String(pick === t.id));
+  b.innerHTML = `<figure>${svg}</figure><div class="cap"><span class="letter">${'ABCD'[i]}</span><b>${t.name}</b><span>${t.desc}</span></div>`;
+  b.onclick = () => { pick = t.id; list.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.id === pick)));
+    try { localStorage.setItem('newton-style2', pick); } catch {} summary(); };
+  list.appendChild(b);
+});
+function summary() { const i = STYLES.findIndex(s => s.id === pick);
+  document.getElementById('summary').innerHTML = i < 0 ? 'Kattints arra a stílusra, amelyik a legjobban tetszik.' : `Választásod: <em>${'ABCD'[i]}, ${STYLES[i].name}</em>`; }
+summary();
+</script>
+</body>
+</html>
