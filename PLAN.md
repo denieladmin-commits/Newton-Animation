@@ -23,7 +23,7 @@ The spec is solid. These are the problems I found and how the plan fixes them:
 | 10 | **500x is too slow for wide ellipses.** As v₀ approaches v₂, the period grows without limit. | Warp presets **1x / 10x / 100x / 500x / 2000x**, with `1–5` keys. Escape runs stop after a distance limit and show a "left the system" badge. |
 | 11 | **Single-file build vs. KaTeX fonts.** `vite-plugin-singlefile` inlines JS and CSS, but KaTeX's CSS points to separate `.woff2` font files, so formulas break offline. | Set `build.assetsInlineLimit` very high so the fonts inline as base64 (about +300 KB). Use only woff2 fonts. Load no web fonts; use the system font stack. Set `base: './'` for GitHub Pages. |
 | 12 | **RK4 energy drift.** The energy bar exposes tiny integrator errors over many orbits. | Fixed substep RK4 (dt ≤ 1 s sim time, adaptive near periapsis), many substeps per frame at high warp. A unit test caps drift at 10⁻⁶ per orbit. |
-| 13 | **Notation follows the Romanian curriculum (taught in Hungarian).** The class learns from Hungarian-language editions of Romanian textbooks, so symbols from Hungary's books (γ, *f*) don't match. | Hungarian wording, Romanian notation: gravitational constant **K** (Romanian books use **G** for weight, *greutate*, so G would clash), **v_I / v_II** for the first and second cosmic speeds, and **E_c** for kinetic energy (*energie cinetică*) beside E_p. Decimal comma (`7,91 km/s`). All symbols live in one notation table (`src/i18n/notation.ts`) so they can be fixed against the class textbook in one place. EN uses international notation (G, v₁, v₂, E_k). |
+| 13 | **Notation must match the class (Romania, taught in Hungarian).** Symbols from Hungary's textbooks (γ, *f*) don't match what students use. | The symbols the class uses (confirmed by the teacher): **G, F (F_g on the arrow), M, R, r = R + h, v₀, v₁, v₂, E_k, E_p, F_cp, a_cp, g**. Decimal comma: `7,91 km/s`. All symbols live in **one file, `src/i18n/notation.ts`**, and the same file drives the symbol glossary (*Jelölések*, §9). Renaming a symbol (e.g. a_cp → a_c) is a one-line change there. |
 
 ### Suggested additions (high value, low cost)
 - **Newton's fan of shots:** previous shots stay as faded ghost trails with labels A, B, C, D… This recreates the classic diagram and lets students compare speeds side by side.
@@ -68,7 +68,7 @@ src/
     ZoomButtons.tsx
   i18n/
     en.ts  hu.ts  index.ts   # typed dictionary, number formatting per locale
-    notation.ts              # per-language physics symbols (HU = Romanian curriculum)
+    notation.ts              # single source of truth for symbols + glossary entries (§9)
   App.tsx  main.tsx  index.css
 ```
 
@@ -101,14 +101,14 @@ src/
 
 ## 4. EdTech features
 
-- **Formula drawer:** a step-by-step derivation F_g = F_cp → K·Mm/r² = mv²/r (both m's highlighted and struck through) → v_I = √(KM/r). Then v_II = √(2KM/r) and ε = v²/2 − KM/r (shown with G, v₁, v₂ in EN), each with live substituted numbers ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
+- **Formula drawer:** a step-by-step derivation F = F_cp → G·Mm/r² = m·v²/r (both m's highlighted and struck through) → v₁ = √(GM/r). Then v₂ = √(2GM/r) = √2·v₁ and E = E_k + E_p = m·v²/2 − G·Mm/r, each with live substituted numbers. **Every symbol in a formula is clickable** and opens its glossary entry (§9) ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
 - **Energy bar** as described in §0.2 and §0.3.
 - **Felfedező mód (4 challenges)**, each with a goal, a "set it up for me" button, a guiding question, and a success check:
   1. *Sub-orbital crash:* fire at 3 km/s and predict where it lands. Shows the range readout.
   2. *8 km / 5 m:* 1x speed, zoomed in. After 1 s the ball has moved about 7.9 km and fallen 4.9 m, which is exactly how much the surface curves away. That's why it never lands.
   3. *Circular orbit:* find v₀ so the ball comes back to the cannon. The 90° marker stays on, and the measured T is compared with the predicted T.
   4. *Ellipse → escape:* raise v₀ step by step. The ghost fan shows the ellipse growing, and at v₂ the orbit opens up as ε crosses 0.
-- **Graphs tab (*Grafikonok*):** altitude r(t), speed v(t), and E_c / E_p / total vs time, plotted live (lightweight canvas plot). Students see the energy trade-off as curves, and the flat total line is visible proof of conservation.
+- **Graphs tab (*Grafikonok*):** altitude r(t), speed v(t), and E_k / E_p / E vs time, plotted live (lightweight canvas plot). Students see the energy trade-off as curves, and the flat total line is visible proof of conservation.
 - **Bilingual EN/HU:** every string, formula label and lesson text goes in a typed dictionary (a missing key is a compile error). The language choice is remembered in localStorage.
 
 ## 5. Layout
@@ -128,9 +128,15 @@ src/
 | **M4** | Sim loop, trail, warp, controls, ghosts, events | All four trajectory types happen naturally; warp keys work |
 | **M5** | Vectors, projections, 90° marker, labels | Screenshots are legible at both zoom extremes |
 | **M6** | Formula drawer, energy bar, telemetry, graphs tab | Live numbers match the physics; the drag-loss segment works |
-| **M7** | i18n EN/HU and lesson mode | Full HU pass with no missing strings; all 4 challenges pass their checks |
+| **M7** | i18n EN/HU, notation.ts + glossary (*Jelölések*, clickable symbols), lesson mode | Full HU pass with no missing strings; all 4 challenges pass their checks |
 | **M8** | Responsive polish, projector mode, shortcuts, a11y | Playwright screenshots at 1440×900 and 390×844 in EN and HU look right |
 | **M9** | Deploy | GitHub Pages workflow (or Vercel), README with classroom guide |
+
+## 7. Decisions (confirmed)
+1. Default language: **Hungarian** (EN one click away).
+2. Notation (confirmed by the teacher): **G, F (F_g on the vector arrow), M, R, r = R + h, v₀, v₁, v₂, E_k, E_p, F_cp, a_cp, g**, decimal comma. The same symbols are used in EN and HU; only names and explanations are translated. a_cp may become a_c to match the class notebook; that's one line in `notation.ts`.
+3. Launch: **horizontal only**, true to Newton.
+4. Deploy: **GitHub Pages via GitHub Actions**, plus the standalone `dist/index.html`.
 
 ## 8. Correctness & verification (people learn from this, so it must be right)
 
@@ -138,9 +144,9 @@ src/
 
 **Layer 1: an independent analytic reference.** Without drag, the exact answer is known in closed form (Kepler conics). `kepler.ts` computes it separately from the integrator, and the tests compare the two:
 - the simulated trajectory stays on the exact ellipse or hyperbola (point-by-point error < 1 m per 1000 km);
-- the measured period matches Kepler's third law, T = 2π√(a³/KM), within 0.01%;
+- the measured period matches Kepler's third law, T = 2π√(a³/GM), within 0.01%;
 - the sub-orbital landing point and flight time match the analytic intersection with the surface;
-- a launch at exactly v_II gives total energy ε = 0 and the ball escapes; 0.999·v_II stays bound.
+- a launch at exactly v₂ gives total energy ε = 0 and the ball escapes; 0.999·v₂ stays bound.
 
 **Layer 2: conservation laws (invariants).** Checked in tests and shown live in a hidden debug overlay (`D` key):
 - total energy and angular momentum stay constant without drag (drift < 10⁻⁸ per orbit);
@@ -149,7 +155,7 @@ src/
 **Layer 3: convergence.** Halving the time step must cut the error about 16×. That is RK4's mathematical signature, and it proves the integrator is implemented correctly, not just "close enough".
 
 **Layer 4: textbook and real-world numbers.**
-- v_I = 7.91 / 1.68 / 3.55 km/s and v_II = 11.2 / 2.38 / 5.03 km/s at the surface (Earth / Moon / Mars).
+- v₁ = 7.91 / 1.68 / 3.55 km/s and v₂ = 11.2 / 2.38 / 5.03 km/s at the surface (Earth / Moon / Mars).
 - In the first second the ball falls 4.90 m, and the surface curves 5.0 m away over 8 km.
 - Circular orbit at 400 km: v = 7.67 km/s, T ≈ 92.4 min (the ISS's real period is about 92–93 min).
 - Constants are taken from the NASA planetary fact sheets, with the source cited in code.
@@ -164,8 +170,51 @@ src/
 
 **Layer 7: human sign-off.** `docs/VALIDATION.md` lists every formula, constant and number the app shows, with its expected value and source, written to be checked by a physics teacher against the class textbook. Simplifications (2D, point mass, non-rotating planet, simple atmosphere) are stated openly in the app's *About the model* (*A modellről*) box.
 
-## 7. Decisions (confirmed)
-1. Default language: **Hungarian** (EN one click away).
-2. Notation: **Romanian-curriculum symbols with Hungarian wording** (K, v_I/v_II, E_c, E_p) in HU; international symbols in EN. *Still to confirm against the class textbook: the planet mass/radius subscripts, the symbol for weight vs. gravitational force, and whether E_c or E_k is used.*
-3. Launch: **horizontal only**, true to Newton.
-4. Deploy: **GitHub Pages via GitHub Actions**, plus the standalone `dist/index.html`.
+## 9. Symbol glossary (*Jelölések*)
+
+A glossary tab/drawer in the app. Each entry has the symbol, its name, a plain explanation, the unit and a typical value. **Clicking a symbol inside any formula opens the same entry** as a popover (KaTeX `\htmlData{sym=…}` + one click handler), so a student can always ask "what is this letter?".
+
+All entries live in `src/i18n/notation.ts`. That one file is used by the formulas, the vector labels, the telemetry and the glossary, so a symbol can never be spelled two different ways in the app.
+
+| Symbol | Name (HU) | Explanation (HU, shown in app) | Unit | Typical value |
+|---|---|---|---|---|
+| G | Gravitációs állandó | Univerzális állandó: megadja, mekkora vonzóerő hat két tömeg között. | N·m²/kg² | 6,674·10⁻¹¹ |
+| F (nyílon F_g) | Gravitációs erő | A bolygó vonzóereje a golyóra; mindig a bolygó középpontja felé mutat. F = G·Mm/r² | N | 10 kg-os golyóra a Föld felszínén ≈ 98 N |
+| M | A bolygó tömege | A bolygó (Föld, Hold, Mars) tömege. | kg | Föld: 5,97·10²⁴ kg |
+| R | A bolygó sugara | A bolygó középpontja és felszíne közötti távolság. | km | Föld: 6371 km |
+| h | A hegy magassága | Milyen magasról lőjük ki a golyót a felszín fölött. | km | Everest: 8,85 km; ISS: 400 km |
+| r | Középponttól mért távolság | A golyó távolsága a bolygó középpontjától: r = R + h. | km | ISS magasságában ≈ 6771 km |
+| m | A golyó tömege | Az ágyúgolyó tömege; a pályát nem befolyásolja, mert kiesik a képletből. | kg | 10 kg |
+| v₀ | Kezdősebesség | A golyó vízszintes sebessége a kilövés pillanatában. | km/s | 0–12 km/s |
+| v | Pillanatnyi sebesség | A golyó sebessége az adott pillanatban; a pálya érintője irányába mutat. | km/s | — |
+| v₁ | Első kozmikus sebesség | Ekkora sebességgel vízszintesen kilőve a test körpályán kering. v₁ = √(GM/r) | km/s | Földön ≈ 7,9 km/s |
+| v₂ | Második kozmikus (szökési) sebesség | Ekkora sebességgel a test végleg elhagyja a bolygót. v₂ = √(2GM/r) = √2·v₁ | km/s | Földön ≈ 11,2 km/s |
+| E_k | Mozgási energia | A mozgásból származó energia. E_k = m·v²/2 | J | 10 kg, 7,91 km/s: ≈ 3,1·10⁸ J |
+| E_p | Helyzeti energia | Gravitációs helyzeti energia, a nullszint a végtelen távolban van, ezért mindig negatív. E_p = −G·Mm/r | J | 10 kg a Föld felszínén: ≈ −6,3·10⁸ J |
+| E | Teljes energia | E = E_k + E_p. Ha negatív, a golyó a bolygó körül marad; ha nulla vagy pozitív, elszökik. | J | körpályán: E = −E_k |
+| F_cp | Centripetális erő | Az az erő, amely a testet körpályán tartja; itt a gravitációs erő játssza ezt a szerepet. F_cp = m·v²/r | N | körpályán F_cp = F |
+| a_cp | Centripetális gyorsulás | A körpálya középpontja felé mutató gyorsulás. a_cp = v²/r (a füzetben lehet a_c; egy sorban átírható) | m/s² | körpályán a_cp = g(r) |
+| g | Nehézségi gyorsulás | A szabadon eső test gyorsulása a felszínen. g = GM/R² | m/s² | Föld 9,81; Hold 1,62; Mars 3,71 |
+| T | Keringési idő | Egy teljes kör megtételéhez szükséges idő. | perc | ISS: ≈ 92,4 perc |
+
+The EN glossary uses the same symbols with English names and explanations.
+
+Sketch of `src/i18n/notation.ts`:
+
+```ts
+export const notation = {
+  v1: {
+    tex: 'v_1',                       // used everywhere: formulas, labels, HUD
+    unit: 'km/s',
+    formula: 'v_1 = \\sqrt{\\frac{GM}{r}}',
+    typical: { hu: 'Földön ≈ 7,9 km/s', en: '≈ 7.9 km/s on Earth' },
+    name: { hu: 'Első kozmikus sebesség', en: 'First cosmic velocity' },
+    explain: {
+      hu: 'Ekkora sebességgel vízszintesen kilőve a test körpályán kering.',
+      en: 'Fired horizontally at this speed, the body moves on a circular orbit.',
+    },
+  },
+  acp: { tex: 'a_{cp}', /* change to 'a_c' here to rename everywhere */ ... },
+  // …one entry per row in the table above
+} as const satisfies Record<string, NotationEntry>;
+```
