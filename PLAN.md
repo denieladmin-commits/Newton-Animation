@@ -12,7 +12,7 @@ The spec is solid. These are the problems I found and how the plan fixes them:
 | # | Issue in original spec | Fix |
 |---|---|---|
 | 1 | Altitude slider runs **10–1000 km**, but the Everest preset is **8.85 km**, below the minimum. | Slider runs **1–1000 km** on a log scale. Presets: Everest 8.85 km, Kármán line 100 km, ISS 400 km. |
-| 2 | **Energy bar with negative PE.** E_p = −GMm/r is always negative, so a two-color bar that adds to a constant can't be drawn honestly. | Signed bar chart with a zero line: E_k (+), E_p (−), total ε. **ε < 0 → bound, ε = 0 → escape threshold, ε > 0 → escapes.** This is the strongest teaching point in the app. |
+| 2 | **Energy bar with negative PE.** E_p = −GMm/r is always negative, so a two-color bar that adds to a constant can't be drawn honestly. | Signed bar chart with a zero line: E_k (+), E_p (−), total E. **E < 0 → bound, E = 0 → escape threshold, E > 0 → escapes.** This is the strongest teaching point in the app. |
 | 3 | **Drag makes total energy drop**, so "total stays constant" isn't true when drag is on. | Add a third segment, "lost to drag / heat" (*hővé alakult*), and say why total falls. |
 | 4 | **Realistic drag is very strong.** At 8.85 km and 7.9 km/s, a 10 kg cannonball loses half its speed in about 1 s. | **Simple on/off toggle (*Légellenállás: be / ki*), realistic only, no adjustable strength.** **Off** = Newton's idealised vacuum (the default). **On** = real air: an exponential atmosphere and an iron 10 kg sphere (radius ≈ 6.7 cm, constant drag coefficient C_d ≈ 0.5). The ball slows almost at once and falls short, which shows why Newton's mountain is an idealisation and why real satellites fly above the atmosphere. At ISS height the effect is real but tiny, and the app says so. No atmosphere on the Moon, so the toggle is disabled there. |
 | 5 | **Scale.** Earth's radius is 6371 km, but the 1 s fall is 4.9 m, a zoom range of about 10⁶×. A circle 6×10⁶ px wide renders badly on canvas, and an 8.85 km mountain is invisible at full-planet zoom. | At high zoom, draw the surface as a local polyline. At low zoom, draw the mountain and cannon as a screen-space illustration with a small "not to scale" tag. Add a **camera follow** mode. |
@@ -102,13 +102,13 @@ src/
 
 ## 4. EdTech features
 
-- **Formula drawer:** a step-by-step derivation F = F_cp → G·Mm/r² = m·v²/r (both m's highlighted and struck through) → v₁ = √(GM/r). Then v₂ = √(2GM/r) = √2·v₁ and E = E_k + E_p = m·v²/2 − G·Mm/r, each with live substituted numbers. **Every symbol in a formula is clickable** and opens its glossary entry (§9) ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
+- **Formula drawer:** a step-by-step derivation F = F_cp → G·Mm/r² = m·v²/r (both m's highlighted and struck through) → v₁ = √(GM/r). Then v₂ = √(2GM/r) = √2·v₁ and E = E_k + E_p = m·v²/2 − G·Mm/r, each with live substituted numbers. Below E, a collapsed *Bővebben* (more) note shows ε = E/m = v²/2 − GM/r: the same energy per kilogram, which doesn't depend on m, so the orbit doesn't either. **Every symbol in a formula is clickable** and opens its glossary entry (§9) ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
 - **Energy bar** as described in §0.2 and §0.3.
 - **Felfedező mód (4 challenges)**, each with a goal, a "set it up for me" button, a guiding question, and a success check:
   1. *Sub-orbital crash:* fire at 3 km/s and predict where it lands. Shows the range readout.
   2. *8 km / 5 m:* 1x speed, zoomed in. After 1 s the ball has moved about 7.9 km and fallen 4.9 m, which is exactly how much the surface curves away. That's why it never lands.
   3. *Circular orbit:* find v₀ so the ball comes back to the cannon. The 90° marker stays on, and the measured T is compared with the predicted T.
-  4. *Ellipse → escape:* raise v₀ step by step. The ghost fan shows the ellipse growing, and at v₂ the orbit opens up as ε crosses 0.
+  4. *Ellipse → escape:* raise v₀ step by step. The ghost fan shows the ellipse growing, and at v₂ the orbit opens up as E crosses 0.
 - **Graphs tab (*Grafikonok*):** altitude r(t), speed v(t), and E_k / E_p / E vs time, plotted live (lightweight canvas plot). Students see the energy trade-off as curves, and the flat total line is visible proof of conservation.
 - **Bilingual EN/HU:** every string, formula label and lesson text goes in a typed dictionary (a missing key is a compile error). The language choice is remembered in localStorage.
 
@@ -148,7 +148,7 @@ src/
 - the simulated trajectory stays on the exact ellipse or hyperbola (point-by-point error < 1 m per 1000 km);
 - the measured period matches Kepler's third law, T = 2π√(a³/GM), within 0.01%;
 - the sub-orbital landing point and flight time match the analytic intersection with the surface;
-- a launch at exactly v₂ gives total energy ε = 0 and the ball escapes; 0.999·v₂ stays bound.
+- a launch at exactly v₂ gives total energy E = 0 and the ball escapes; 0.999·v₂ stays bound.
 
 **Layer 2: conservation laws (invariants).** Checked in tests and shown live in a hidden debug overlay (`D` key):
 - total energy and angular momentum stay constant without drag (drift < 10⁻⁸ per orbit);
@@ -206,6 +206,7 @@ All entries live in `src/i18n/notation.ts`. That one file is used by the formula
 | F_cp | Centripetális erő | Az az erő, amely a testet körpályán tartja; itt a gravitációs erő játssza ezt a szerepet. F_cp = m·v²/r | N | körpályán F_cp = F |
 | a_cp | Centripetális gyorsulás | A körpálya középpontja felé mutató gyorsulás. a_cp = v²/r (a füzetben lehet a_c; egy sorban átírható) | m/s² | körpályán a_cp = g(r) |
 | g | Nehézségi gyorsulás | A szabadon eső test gyorsulása a felszínen. g = GM/R² | m/s² | Föld 9,81; Hold 1,62; Mars 3,71 |
+| ε | Fajlagos energia (*Bővebben* only) | Az egy kilogrammra jutó teljes energia: ε = E/m = v²/2 − GM/r. Nem függ a golyó tömegétől, ezért a pálya sem. | J/kg | körpályán a Föld felszínén ≈ −31 MJ/kg |
 | T | Keringési idő | Egy teljes kör megtételéhez szükséges idő. | perc | ISS: ≈ 92,4 perc |
 
 The EN glossary uses the same symbols with English names and explanations.
