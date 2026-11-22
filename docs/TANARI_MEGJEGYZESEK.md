@@ -123,8 +123,11 @@ A sebességet két merőleges részre bontjuk: a radiális (sugárirányú) v_r 
 **28. Az ISS-en súlytalanság van. Akkor ott nincs gravitáció?**
 Van, és nem is sokkal kisebb: 400 km magasan a 10 kg-os golyóra 86,9 N hat, a felszíni 98,2 N kb. 89 %-a. Ez jól látszik az alkalmazásban is (F = 86,9 N). A súlytalanság oka, hogy az ISS és benne minden folyamatosan szabadon esik a Föld körül (lásd a 17. kérdést), ezért semmi sem nyomja a padlót.
 
-**29. Miért van két megjelenés (Valósághű és Tábla)?**
-A fizika mindkettőben ugyanaz, csak a rajz más. A Valósághű a látványosabb, sötétített teremben ajánlott. A Tábla krétarajzra hasonlít, Newton 1728-as rézmetszetének vonalkázásával; világos teremben, kivetítőn is jól olvasható. A váltó a kép jobb felső sarkában van (telefonon a Vezérlés fül alján), a T billentyű is vált.
+**29. Miért van két megjelenés (Valósághű és Newton rajza)?**
+A fizika mindkettőben ugyanaz, csak a rajz más. A Valósághű a látványosabb, sötétített teremben ajánlott. A „Newton rajza” Newton 1728-ban megjelent ábráját idézi (A Treatise of the System of the World): rézmetszet-szerű vonalkázás, barna tinta papíron, a hegy csúcsán V betű, a becsapódási pontokon betűk – világos teremben és kivetítőn is jól olvasható. A váltó a kép jobb felső sarkában van (telefonon a Vezérlés fül alján), a T billentyű is vált.
+
+**29b. Változnak-e a nyilak a mozgás közben?**
+Igen, minden képkockában. A sebességnyíl hossza a sebességgel arányos, az erőnyílé a távolság négyzetével fordítottan arányos. Körpályán mindkettő állandó hosszú – ez nem hiba, hanem éppen a körpálya lényege (állandó sebesség, állandó távolság). Ellipszispályán jól látszik a változás: a bolygóhoz közel a sebességnyíl hosszabb, az erőnyíl is hosszabb. Légellenállással egy harmadik, F⃗_d jelű nyíl is megjelenik: a közegellenállási erő, mindig a sebességgel ellentétes irányban, ugyanazon a léptéken, mint F⃗, így a kettő közvetlenül összevethető.
 
 ## Energia, képletek, grafikonok
 

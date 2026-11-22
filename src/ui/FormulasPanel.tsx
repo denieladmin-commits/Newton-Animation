@@ -11,7 +11,7 @@ import type { ThemeId } from '../theme/themes';
 /** TeX colours per theme (KaTeX needs literal hex values). */
 const TEX_COLORS: Record<ThemeId, { hl: string; ek: string; ep: string; e: string }> = {
   real: { hl: '#e8b44c', ek: '#3987e5', ep: '#d55181', e: '#c98500' },
-  chalk: { hl: '#2f6b4f', ek: '#2a78d6', ep: '#c2457a', e: '#a86a00' },
+  newton: { hl: '#9b2d20', ek: '#2a5f9e', ep: '#a8326e', e: '#8a5a00' },
 };
 
 interface Props {

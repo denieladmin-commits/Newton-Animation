@@ -234,16 +234,16 @@ export const notation = {
 
 ## 10. Visual design (decided from prototypes, see `prototypes/`)
 
-Two themes, switchable with a **Valósághű | Tábla** button at the top right of the canvas (remembered per device):
+Two themes, switchable with a **Valósághű | Newton rajza** button at the top right of the canvas (remembered per device):
 
-| | **Valósághű** (main) | **Tábla** (alternative) |
+| | **Valósághű** (main) | **Newton rajza** (alternative; replaced the earlier chalkboard) |
 |---|---|---|
-| Background | deep space `#081221`, stars, faint polar grid | chalkboard green `#25362e`, slight chalk smudge |
-| Planet | stylised globe: ocean, organic continents, clouds, polar ice, night side, blue atmosphere rim | engraving-style hatching in chalk, denser towards the rim (like Newton's 1728 plate) |
-| Lines | precise, thin; no decorative glow | chalk texture on all drawing |
-| Vectors | v `#7cd0ff`, F `#ff8f80` | v chalk yellow `#f4e27a`, F chalk red `#f28b82` |
-| Panel | dark navy `#0f1b2e`, amber "Tűz!" | light paper `#f2f1ec`, green "Tűz!" `#2f6b4f` |
-| Type | Instrument Sans (UI) + Newsreader italic (formula letters) | Atkinson Hyperlegible (UI) + Newsreader italic |
+| Background | deep space `#081221`, stars, faint polar grid | laid paper `#efe6d0` with faint grain and foxed edges, double-ruled plate frame |
+| Planet | stylised globe: ocean, organic continents, clouds, polar ice, night side, blue atmosphere rim | copper-engraving hatching, denser towards the rim; the same continents, outlined and cross-hatched |
+| Lines | precise, thin; no decorative glow | dark-brown ink `#2b2118`; mountain top marked V, landing points A, B, C… as in Newton's figure |
+| Vectors | v `#7cd0ff`, F `#ff8f80`, F_d `#d9c7a1` | v indigo ink `#1f4e79`, F red ochre `#9b2d20`, F_d `#6b5d4b` |
+| Panel | dark navy `#0f1b2e`, amber "Tűz!" | paper `#f4ecda`, ink-black "Tűz!", oxblood controls `#7a2e1f` |
+| Type | Instrument Sans (UI) + Newsreader italic (formula letters) | Newsreader throughout (UI and formula letters) |
 
 Shared in both themes (chosen in round 1):
 - **Control panel:** the current list layout, with sentence-case labels instead of all-caps.

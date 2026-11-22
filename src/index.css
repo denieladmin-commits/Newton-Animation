@@ -33,30 +33,31 @@
   --font-math: 'Newsreader', 'Times New Roman', serif;
 }
 
-[data-theme='chalk'] {
+[data-theme='newton'] {
   color-scheme: light;
-  --page: #25362e;
-  --panel: #f2f1ec;
-  --ink: #1f2a24;
-  --muted: #5a6359;
-  --line: #cfcdc3;
-  --chip-on: #e4ece6;
-  --chip-on-line: #2f6b4f;
-  --chip-on-ink: #1f2a24;
-  --control: #2f6b4f;
-  --fire: #2f6b4f;
-  --fire-hover: #3a7d5d;
-  --fire-ink: #ffffff;
-  --overlay-bg: rgba(37, 54, 46, 0.92);
-  --overlay-ink: #eeede5;
-  --overlay-muted: #c8cbbf;
-  --overlay-line: rgba(238, 237, 229, 0.45);
-  /* chart series (validated, light mode, surface #f2f1ec; direct labels required) */
-  --s-ek: #2a78d6;
-  --s-ep: #c2457a;
-  --s-e: #a86a00;
-  --s-loss: #7b7f78;
-  --grid: rgba(31, 42, 36, 0.1);
+  --page: #e9dfc7;
+  --panel: #f4ecda;
+  --ink: #2b2118;
+  --muted: #5f5244;
+  --line: #d6c9ab;
+  --chip-on: #e8dcc0;
+  --chip-on-line: #7a2e1f;
+  --chip-on-ink: #2b2118;
+  --control: #7a2e1f;
+  --fire: #2b2118;
+  --fire-hover: #4a3a2c;
+  --fire-ink: #f4ecda;
+  --overlay-bg: rgba(244, 236, 218, 0.94);
+  --overlay-ink: #2b2118;
+  --overlay-muted: #5f5244;
+  --overlay-line: rgba(43, 33, 24, 0.35);
+  /* chart series (validated, light mode, surface #f4ecda; direct labels required) */
+  --s-ek: #2a5f9e;
+  --s-ep: #a8326e;
+  --s-e: #8a5a00;
+  --s-loss: #7d7366;
+  --grid: rgba(43, 33, 24, 0.1);
+  --font-ui: 'Newsreader', 'Times New Roman', serif;
 }
 
 html, body, #root { height: 100%; }

@@ -30,9 +30,43 @@ export const PLANET_STYLE: Record<BodyId, PlanetStyle> = {
 
 const SIZE = 1024;
 const cache = new Map<BodyId, HTMLCanvasElement>();
+/** Unlit surface colours of each texture, for matching the close-up ground to the globe. */
+const albedo = new Map<BodyId, ImageData>();
+
+/**
+ * Surface colour of the globe just inside the rim at polar angle `theta`
+ * (world frame: radians from +x, counter-clockwise), averaged over a few pixels.
+ * Lets the zoomed-in ground continue the colour of the globe (ice, ocean, land).
+ */
+export function surfaceColorAt(id: BodyId, theta: number): [number, number, number] {
+  planetTexture(id);
+  const img = albedo.get(id)!;
+  const R = SIZE / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let n = 0;
+  for (const dr of [0.96, 0.975, 0.99])
+    for (const da of [-0.01, 0, 0.01]) {
+      const x = Math.round(R + Math.cos(theta + da) * R * dr);
+      const y = Math.round(R - Math.sin(theta + da) * R * dr);
+      const i = (Math.min(SIZE - 1, Math.max(0, y)) * SIZE + Math.min(SIZE - 1, Math.max(0, x))) * 4;
+      r += img.data[i]!;
+      g += img.data[i + 1]!;
+      b += img.data[i + 2]!;
+      n++;
+    }
+  return [Math.round(r / n), Math.round(g / n), Math.round(b / n)];
+}
+
+/** Earth's continents on the texture: centre x, centre y, radius (fractions of the disk), stretch. Seed = 101 + 17·i. */
+export const EARTH_LAND: [number, number, number, number][] = [
+  [0.22, 0.42, 0.17, 1.3], [0.3, 0.72, 0.12, 0.8], [0.62, 0.3, 0.13, 1.1],
+  [0.7, 0.58, 0.16, 0.9], [0.86, 0.78, 0.08, 1.2], [0.45, 0.52, 0.05, 1.5],
+];
 
 /** Organic closed coastline: a smooth curve through points with seeded radius noise. */
-function coast(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, stretch: number, seed: number, n = 16) {
+export function coast(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, stretch: number, seed: number, n = 16) {
   const rnd = mulberry32(seed);
   const pts = Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2;
@@ -88,11 +122,7 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
     ctx.fillStyle = deep;
     ctx.fillRect(0, 0, SIZE, SIZE);
     // Continents: organic coastlines with drier interiors
-    const continents: [number, number, number, number][] = [
-      [0.22, 0.42, 0.17, 1.3], [0.3, 0.72, 0.12, 0.8], [0.62, 0.3, 0.13, 1.1],
-      [0.7, 0.58, 0.16, 0.9], [0.86, 0.78, 0.08, 1.2], [0.45, 0.52, 0.05, 1.5],
-    ];
-    continents.forEach(([cx, cy, r, stretch], i) => {
+    EARTH_LAND.forEach(([cx, cy, r, stretch], i) => {
       ctx.fillStyle = ['#4d6e43', '#557a49', '#5e7347', '#4f7246'][i % 4]!;
       ctx.strokeStyle = 'rgba(210,230,210,0.18)';
       ctx.lineWidth = 2;
@@ -157,6 +187,8 @@ export function planetTexture(id: BodyId): HTMLCanvasElement {
     ctx.ellipse(R, SIZE - 4, R * 0.25, 26, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  albedo.set(id, ctx.getImageData(0, 0, SIZE, SIZE));
 
   // Lighting: bright upper-left, terminator and limb darkening.
   const light = ctx.createRadialGradient(R * 0.55, R * 0.5, R * 0.1, R, R, R * 1.05);

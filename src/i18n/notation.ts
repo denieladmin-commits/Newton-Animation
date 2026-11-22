@@ -170,6 +170,17 @@ export const NOTATION = {
     },
     typical: { hu: 'körpályán E = −E_k', en: 'on a circular orbit E = −E_k' },
   },
+  Fd: {
+    tex: 'F_d',
+    unit: 'N',
+    formula: 'F_d = \\tfrac{1}{2}\\,\\rho\\, C_d\\, A\\, v^2',
+    name: { hu: 'Légellenállási (közegellenállási) erő', en: 'Air drag force' },
+    explain: {
+      hu: 'A levegő fékezőereje, a sebességgel ellentétes irányú. ρ a levegő sűrűsége, C_d a gömb ellenállási tényezője (0,47–1,0), A a golyó keresztmetszete.',
+      en: 'The braking force of the air, opposite to the velocity. ρ is the air density, C_d the drag coefficient of a sphere (0.47–1.0), A the cross-section of the ball.',
+    },
+    typical: { hu: 'az Everestről 7,9 km/s-mal: ≈ 192 000 N', en: 'from Everest at 7.9 km/s: ≈ 192,000 N' },
+  },
   W: {
     tex: 'W',
     unit: 'J',

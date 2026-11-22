@@ -50,3 +50,12 @@ describe('vector overlay geometry (M5)', () => {
     }
   });
 });
+
+describe('air drag arrow', () => {
+  it('uses the same scale as F⃗: a drag force equal to gravity at launch gets the same length', async () => {
+    const { dragArrowLength, F_REF_PX } = await import('../vectors');
+    const g0 = earth.GM / r0 ** 2;
+    expect(dragArrowLength(g0, earth, r0)).toBeCloseTo(F_REF_PX, 9);
+    expect(dragArrowLength(g0 / 2, earth, r0)).toBeCloseTo(F_REF_PX / 2, 9);
+  });
+});

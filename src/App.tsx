@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BODIES, circularSpeed, escapeSpeed } from './physics/bodies';
-import { DEFAULT_PROJECTILE, radius, speed } from './physics/orbitalPhysics';
+import { DEFAULT_PROJECTILE, forces, radius, speed } from './physics/orbitalPhysics';
 import { Camera } from './render/camera';
 import type { SceneLabels, SceneOptions } from './render/scene';
 import { THEMES, type ThemeId } from './theme/themes';
@@ -38,6 +38,8 @@ interface Telemetry {
   loss: number;
   /** Energy bar scale for this shot (J). */
   scale: number;
+  /** Air-drag force on the ball (N), 0 without drag. */
+  dragForce: number;
 }
 
 function readTelemetry(sim: Simulation): Telemetry {
@@ -63,6 +65,7 @@ function readTelemetry(sim: Simulation): Telemetry {
       ep: en.ep,
       loss: 0,
       scale,
+      dragForce: 0,
     };
   }
   const s = shot.flight.state;
@@ -81,6 +84,12 @@ function readTelemetry(sim: Simulation): Telemetry {
     ep: en.ep,
     loss: en.loss,
     scale,
+    dragForce: shot.flight.env.drag
+      ? (() => {
+          const f = forces(s, shot.flight.env);
+          return Math.hypot(f.dx, f.dy) * DEFAULT_PROJECTILE.mass;
+        })()
+      : 0,
   };
 }
 
@@ -101,7 +110,9 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('controls');
   const [themeId, setThemeId] = useState<ThemeId>(() => {
     try {
-      return localStorage.getItem('theme') === 'chalk' ? 'chalk' : 'real';
+      // 'chalk' was the earlier alternative style; it became Newton's figure.
+      const saved = localStorage.getItem('theme');
+      return saved === 'newton' || saved === 'chalk' ? 'newton' : 'real';
     } catch {
       return 'real';
     }
@@ -271,7 +282,7 @@ export default function App() {
       else if (e.key.toLowerCase() === 'f') setFollow((v) => !v);
       else if (e.key.toLowerCase() === 'l') setLang((l) => (l === 'hu' ? 'en' : 'hu'));
       else if (e.key.toLowerCase() === 'v') setVectors((v) => !v);
-      else if (e.key.toLowerCase() === 't') setThemeId((th) => (th === 'real' ? 'chalk' : 'real'));
+      else if (e.key.toLowerCase() === 't') setThemeId((th) => (th === 'real' ? 'newton' : 'real'));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -323,6 +334,7 @@ export default function App() {
                 h = {fmtDistance(tele.altitude, lang)}&ensp;
                 {tele.status !== 'idle' && <>v = {fmt(tele.speed / 1000, lang, 3)} km/s&ensp;</>}
                 F = {fmtForce(tele.force)} N
+                {tele.dragForce >= 0.01 && <>&ensp;F<sub>d</sub> = {fmtForce(tele.dragForce)} N</>}
               </p>
             </div>
           </div>
@@ -332,9 +344,9 @@ export default function App() {
               aria-label={t.theme}
               className="hidden gap-0.5 rounded-xl sm:flex border border-(--overlay-line) bg-(--overlay-bg) p-1 backdrop-blur-sm"
             >
-              {(['real', 'chalk'] as const).map((id) => (
+              {(['real', 'newton'] as const).map((id) => (
                 <button key={id} role="radio" aria-checked={themeId === id} className={segBtn(themeId === id)} onClick={() => setThemeId(id)}>
-                  {id === 'real' ? t.themeReal : t.themeChalk}
+                  {id === 'real' ? t.themeReal : t.themeNewton}
                 </button>
               ))}
             </div>

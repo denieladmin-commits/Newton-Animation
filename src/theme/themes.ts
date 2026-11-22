@@ -2,7 +2,7 @@
  * The two visual themes (PLAN.md §10). The canvas reads these tokens directly;
  * the panel gets the same colours through CSS variables (see index.css).
  */
-export type ThemeId = 'real' | 'chalk';
+export type ThemeId = 'real' | 'newton';
 
 export interface Theme {
   id: ThemeId;
@@ -15,10 +15,12 @@ export interface Theme {
   /** Text outline drawn behind letters on busy backgrounds (null = none). */
   halo: string | null;
   stars: boolean;
-  /** Chalk grain over all drawing. */
-  chalk: boolean;
+  /** Engraving style (Newton's 1728 figure): paper, ink, hatching, double-ruled frame. */
+  engraving: boolean;
   vel: string;
   force: string;
+  /** Air-drag arrow. */
+  drag: string;
   trail: string;
   ghost: string;
   ghostLetter: string;
@@ -50,9 +52,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     guide: 'rgba(232,228,216,0.32)',
     halo: '#081221',
     stars: true,
-    chalk: false,
+    engraving: false,
     vel: '#7cd0ff',
     force: '#ff8f80',
+    drag: '#d9c7a1',
     trail: '#7cd0ff',
     ghost: '#c9b8f0',
     ghostLetter: '#e8e4d8',
@@ -71,32 +74,35 @@ export const THEMES: Record<ThemeId, Theme> = {
     vectorWidth: 2.4,
     arrowHead: 13,
   },
-  chalk: {
-    id: 'chalk',
-    bg: '#25362e',
-    ink: '#eeede5',
-    guide: 'rgba(238,237,229,0.38)',
-    halo: null,
+  newton: {
+    // After the figure in Newton's "A Treatise of the System of the World" (1728):
+    // copper engraving, dark-brown ink on laid paper.
+    id: 'newton',
+    bg: '#efe6d0',
+    ink: '#2b2118',
+    guide: 'rgba(43,33,24,0.4)',
+    halo: '#efe6d0',
     stars: false,
-    chalk: true,
-    vel: '#f4e27a',
-    force: '#f28b82',
-    trail: '#f4e27a',
-    ghost: '#eeede5',
-    ghostLetter: '#eeede5',
-    ball: '#eeede5',
-    ballStroke: '#25362e',
-    cannonFill: '#25362e',
-    mountainFill: '#25362e',
-    mountainInk: '#eeede5',
-    overlayBg: 'rgba(37,54,46,0.92)',
-    overlayInk: '#eeede5',
-    overlayMuted: '#c8cbbf',
-    overlayLine: 'rgba(238,237,229,0.45)',
-    fontUi: '"Instrument Sans", system-ui, sans-serif',
+    engraving: true,
+    vel: '#1f4e79',
+    force: '#9b2d20',
+    drag: '#6b5d4b',
+    trail: '#2b2118',
+    ghost: '#5a4a3a',
+    ghostLetter: '#2b2118',
+    ball: '#2b2118',
+    ballStroke: '#efe6d0',
+    cannonFill: '#efe6d0',
+    mountainFill: '#efe6d0',
+    mountainInk: '#2b2118',
+    overlayBg: 'rgba(244,236,218,0.94)',
+    overlayInk: '#2b2118',
+    overlayMuted: '#5f5244',
+    overlayLine: 'rgba(43,33,24,0.35)',
+    fontUi: MATH,
     fontMath: MATH,
-    trailWidth: 2.8,
-    vectorWidth: 2.8,
-    arrowHead: 15,
+    trailWidth: 1.6,
+    vectorWidth: 2,
+    arrowHead: 13,
   },
 };

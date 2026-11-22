@@ -1,4 +1,4 @@
-/** Small drawing helpers shared by the renderer: hatching, chalk grain, arrows, letters. */
+/** Small drawing helpers shared by the renderer: hatching, paper grain, arrows, letters. */
 import { mulberry32 } from './planetTexture';
 
 // ─────────────────────────────── hatching ───────────────────────────────
@@ -26,11 +26,11 @@ export function hatch(ctx: CanvasRenderingContext2D, color: string, alpha: numbe
   return pattern;
 }
 
-// ─────────────────────────────── chalk ───────────────────────────────
+// ─────────────────────────────── paper ───────────────────────────────
 let grain: HTMLCanvasElement | null = null;
 
-/** Tileable speckle used to break up chalk strokes. */
-function grainTile(): HTMLCanvasElement {
+/** Tileable speckle, used as paper texture in the engraving theme. */
+export function grainTile(): HTMLCanvasElement {
   if (grain) return grain;
   grain = document.createElement('canvas');
   grain.width = grain.height = 256;
@@ -46,40 +46,6 @@ function grainTile(): HTMLCanvasElement {
 }
 
 export type Paint = string | CanvasPattern;
-const chalkCache = new Map<string, CanvasPattern>();
-
-/**
- * Chalk "paint": the colour with grain holes already punched in, used as stroke and
- * fill style for moving chalk drawing (trails, arrows, letters). Screen-anchored,
- * like the texture of a real board.
- */
-export function chalkPaint(ctx: CanvasRenderingContext2D, color: string): CanvasPattern {
-  const hit = chalkCache.get(color);
-  if (hit) return hit;
-  const tile = document.createElement('canvas');
-  tile.width = tile.height = 256;
-  const g = tile.getContext('2d')!;
-  g.fillStyle = color;
-  g.fillRect(0, 0, 256, 256);
-  g.globalCompositeOperation = 'destination-out';
-  g.drawImage(grainTile(), 0, 0);
-  const p = ctx.createPattern(tile, 'repeat')!;
-  chalkCache.set(color, p);
-  return p;
-}
-
-/**
- * Chalk theme: the canvas is transparent over a CSS chalkboard, so the grain can be
- * erased straight out of the drawing (one fill, no extra layer).
- */
-export function applyChalkGrain(ctx: CanvasRenderingContext2D) {
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = ctx.createPattern(grainTile(), 'repeat')!;
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.restore();
-}
 
 // ─────────────────────────────── arrows & letters ───────────────────────────────
 /** Textbook arrow from (x, y) along unit direction (dx, dy), `len` px long. */

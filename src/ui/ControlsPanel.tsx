@@ -219,9 +219,9 @@ export function ControlsPanel(props: Props) {
       <div className="sm:hidden">
         <Section title={t.theme}>
           <div className="grid grid-cols-2 gap-2">
-            {(['real', 'chalk'] as const).map((id) => (
+            {(['real', 'newton'] as const).map((id) => (
               <button key={id} className={chip(props.themeId === id)} aria-pressed={props.themeId === id} onClick={() => props.onTheme(id)}>
-                {id === 'real' ? t.themeReal : t.themeChalk}
+                {id === 'real' ? t.themeReal : t.themeNewton}
               </button>
             ))}
           </div>

@@ -11,7 +11,7 @@ import { circularSpeed } from '../physics/bodies';
 import { isPerpendicular, type State } from '../physics/orbitalPhysics';
 import type { Theme } from '../theme/themes';
 import type { Camera } from './camera';
-import { arrow, chalkPaint, mathLetter, type Paint } from './draw';
+import { arrow, mathLetter } from './draw';
 
 export const V_REF_PX = 90;
 export const F_REF_PX = 72;
@@ -67,6 +67,14 @@ export function vectorLayout(s: State, body: Body, r0: number): VectorLayout {
 
 export interface VectorOptions {
   components: boolean;
+  /** Drag acceleration (m/s², world frame) when air drag is on. */
+  drag?: { x: number; y: number };
+}
+
+/** Drag arrow length (px): same scale as F⃗, so the two can be compared directly. */
+export function dragArrowLength(dragAccel: number, body: Body, r0: number): number {
+  const g0 = body.GM / (r0 * r0);
+  return Math.min(MAX_F_PX * 1.4, Math.max(MIN_PX, (F_REF_PX * dragAccel) / g0));
 }
 
 export function drawVectors(
@@ -81,8 +89,7 @@ export function drawVectors(
   const L = vectorLayout(s, body, r0);
   const bx = cam.toScreenX(s.x);
   const by = cam.toScreenY(s.y);
-  const paint = (c: string): Paint => (theme.chalk ? chalkPaint(ctx, c) : c);
-  const t = { ...theme, vel: paint(theme.vel), force: paint(theme.force), ink: paint(theme.ink), guide: paint(theme.guide) };
+  const t = theme;
 
   // Guides: dashed tangent line through the ball and dashed radius towards the centre.
   ctx.save();
@@ -142,6 +149,22 @@ export function drawVectors(
   // Main vectors
   if (L.vLen > 0) arrow(ctx, bx, by, L.v.x, L.v.y, L.vLen, t.vel, t.vectorWidth, t.arrowHead);
   arrow(ctx, bx, by, L.f.x, L.f.y, L.fLen, t.force, t.vectorWidth, t.arrowHead);
+
+  // Air drag F⃗_d, opposite to the velocity; only when it is noticeable (> 1 % of gravity).
+  if (opts.drag) {
+    const ad = Math.hypot(opts.drag.x, opts.drag.y);
+    const r = Math.hypot(s.x, s.y);
+    if (ad > 0.01 * (body.GM / (r * r))) {
+      const dx = opts.drag.x / ad;
+      const dy = -opts.drag.y / ad;
+      const len = dragArrowLength(ad, body, r0);
+      const dragColor = theme.drag;
+      arrow(ctx, bx, by, dx, dy, len, dragColor, t.vectorWidth, t.arrowHead);
+      const px = bx + dx * (len + 14);
+      const py = by + dy * (len + 14);
+      mathLetter(ctx, px - (dx < 0 ? 22 : 2), py + (dy > 0 ? 18 : 4), 'F', dragColor, t.fontMath, 24, { vector: true, sub: 'd', halo: t.halo });
+    }
+  }
 
   // 90° marker between v⃗ and F⃗ when they are perpendicular
   if (L.perpendicular && L.vLen > 0) {

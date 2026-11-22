@@ -4,13 +4,13 @@
  * Everything is in true scale; only markers (cannon, ball, letters) have a fixed pixel size.
  */
 import type { Body } from '../physics/bodies';
-import type { State } from '../physics/orbitalPhysics';
+import { forces, type State } from '../physics/orbitalPhysics';
 import type { Shot, Simulation } from '../sim/simulation';
 import type { Trail } from '../sim/trail';
 import type { Theme } from '../theme/themes';
 import type { Camera } from './camera';
-import { applyChalkGrain, chalkPaint, hatch, mathLetter, tag, type Paint } from './draw';
-import { mulberry32, planetTexture, PLANET_STYLE } from './planetTexture';
+import { grainTile, hatch, mathLetter, tag, type Paint } from './draw';
+import { coast, EARTH_LAND, mulberry32, planetTexture, PLANET_STYLE, surfaceColorAt } from './planetTexture';
 import { drawVectors } from './vectors';
 
 /** Above this planet radius (px) switch from the disk image to a locally drawn surface. */
@@ -94,7 +94,7 @@ function drawRings(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, color
 }
 
 // ─────────────────────────────── planet ───────────────────────────────
-/** Hatch settings per body in the chalk theme (angle, gap). */
+/** Hatch settings per body in the engraving theme (angle, gap). */
 const CHALK_HATCH: Record<Body['id'], [number, number]> = { earth: [35, 7], moon: [-20, 8], mars: [60, 6.5] };
 
 function drawPlanetDisk(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, t: Theme) {
@@ -103,7 +103,7 @@ function drawPlanetDisk(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, 
   const Rpx = body.radius * cam.scale;
   const style = PLANET_STYLE[body.id];
 
-  if (t.chalk) {
+  if (t.engraving) {
     const [angle, gap] = CHALK_HATCH[body.id];
     ctx.fillStyle = hatch(ctx, t.ink, 0.17, gap, angle);
     ctx.beginPath();
@@ -117,6 +117,25 @@ function drawPlanetDisk(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, 
       ctx.arc(ox, oy, Math.max(0, Rpx - w), 0, Math.PI * 2, true);
       ctx.fill();
     };
+    // Land, engraved: outlined coasts with their own, denser hatching (same continents as the globe).
+    if (body.id === 'earth' && Rpx > 40) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ox, oy, Rpx, 0, Math.PI * 2);
+      ctx.clip();
+      const D = 2 * Rpx;
+      EARTH_LAND.forEach(([fx, fy, fr, stretch], i) => {
+        coast(ctx, ox - Rpx + fx * D, oy - Rpx + fy * D, fr * D, stretch, 101 + i * 17);
+        ctx.fillStyle = t.bg;
+        ctx.fill();
+        ctx.fillStyle = hatch(ctx, t.ink, 0.42, 3.4, -50);
+        ctx.fill();
+        ctx.strokeStyle = t.ink;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
     band(Math.min(46, Rpx * 0.14), 0.22, 6, -angle);
     band(Math.min(18, Rpx * 0.06), 0.28, 4.5, angle + 45);
     if (body.atmosphere) {
@@ -201,7 +220,7 @@ function drawLocalSurface(ctx: CanvasRenderingContext2D, cam: Camera, body: Body
     }
   };
 
-  if (t.chalk) {
+  if (t.engraving) {
     const [angle, gap] = CHALK_HATCH[body.id];
     ctx.fillStyle = hatch(ctx, t.ink, 0.17, gap, angle);
     bandPath(R, R - depth);
@@ -253,9 +272,11 @@ function drawLocalSurface(ctx: CanvasRenderingContext2D, cam: Camera, body: Body
 
   const [gx0, gy0] = pt(theta0, R);
   const [gx1, gy1] = pt(theta0, R - Math.min(depth, 40 / cam.scale));
+  // Continue the globe's colour at this spot (ice at the pole, ocean, land…).
+  const [cr, cg, cb] = surfaceColorAt(body.id, theta0);
   const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
-  g.addColorStop(0, style.ground);
-  g.addColorStop(1, style.groundDark);
+  g.addColorStop(0, `rgb(${cr},${cg},${cb})`);
+  g.addColorStop(1, `rgb(${Math.round(cr * 0.55)},${Math.round(cg * 0.55)},${Math.round(cb * 0.55)})`);
   ctx.fillStyle = g;
   bandPath(R, R - depth);
   ctx.fill();
@@ -290,7 +311,7 @@ function drawMountain(ctx: CanvasRenderingContext2D, cam: Camera, body: Body, h:
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
-  if (t.chalk) {
+  if (t.engraving) {
     ctx.fillStyle = t.bg;
     ctx.fill();
     ctx.fillStyle = hatch(ctx, t.ink, 0.55, 3.6, -35);
@@ -365,7 +386,7 @@ function drawTrail(ctx: CanvasRenderingContext2D, cam: Camera, shot: Shot, curre
   } else {
     ctx.setLineDash([5, 4]);
     ctx.strokeStyle = t.ghost;
-    ctx.globalAlpha = t.chalk ? 0.8 : 0.75;
+    ctx.globalAlpha = t.engraving ? 0.8 : 0.75;
     ctx.lineWidth = 1.3;
   }
   ctx.stroke();
@@ -446,14 +467,14 @@ function drawScaleBar(ctx: CanvasRenderingContext2D, cam: Camera, label: (m: num
   ctx.globalAlpha = 1;
 }
 
-function drawCaption(ctx: CanvasRenderingContext2D, cam: Camera, caption: SceneLabels['caption'], t: Painted) {
+function drawCaption(ctx: CanvasRenderingContext2D, cam: Camera, caption: SceneLabels['caption'], t: Painted, inset = 0) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.globalAlpha = 0.85;
   ctx.fillStyle = t.ink;
   ctx.font = `italic 15px ${t.fontMath}`;
-  const x = 18;
-  const y = cam.height - 16;
+  const x = 18 + inset;
+  const y = cam.height - 16 - inset;
   ctx.fillText(caption.figure, x, y);
   const w = ctx.measureText(caption.figure + ' ').width;
   ctx.font = `15px ${t.fontMath}`;
@@ -477,50 +498,39 @@ export interface SceneOptions {
 // The still parts of the picture (sky, planet, mountain) are drawn into a cached layer
 // that is rebuilt only when the camera, planet, mountain or theme changes.
 let staticLayer: HTMLCanvasElement | null = null;
-let chalkInk: HTMLCanvasElement | null = null;
 let staticKey = '';
 
-/** Green board with faint eraser smudges. */
-function drawBoard(ctx: CanvasRenderingContext2D, cam: Camera, t: Theme) {
+/** Laid paper: base tone, faint grain and darker, foxed edges. */
+function drawPaper(ctx: CanvasRenderingContext2D, cam: Camera, t: Theme) {
   ctx.fillStyle = t.bg;
   ctx.fillRect(0, 0, cam.width, cam.height);
-  const cx = cam.width * 0.45;
-  const cy = cam.height * 0.4;
-  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(cam.width, cam.height) * 0.8);
-  g.addColorStop(0, 'rgba(255,255,255,0.05)');
-  g.addColorStop(1, 'rgba(0,0,0,0.14)');
+  ctx.save();
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = ctx.createPattern(grainTile(), 'repeat')!;
+  ctx.fillRect(0, 0, cam.width, cam.height);
+  ctx.restore();
+  const cx = cam.width / 2;
+  const cy = cam.height / 2;
+  const g = ctx.createRadialGradient(cx, cy, Math.min(cx, cy) * 0.6, cx, cy, Math.hypot(cx, cy));
+  g.addColorStop(0, 'rgba(120,90,40,0)');
+  g.addColorStop(1, 'rgba(120,90,40,0.16)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, cam.width, cam.height);
 }
 
-function drawStatic(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation, t: Theme) {
-  if (t.chalk) {
-    // Chalk drawing goes on its own layer so the grain only erases chalk, not the board.
-    const c = ctx.canvas;
-    if (!chalkInk) chalkInk = document.createElement('canvas');
-    if (chalkInk.width !== c.width || chalkInk.height !== c.height) {
-      chalkInk.width = c.width;
-      chalkInk.height = c.height;
-    }
-    const ink = chalkInk.getContext('2d')!;
-    ink.setTransform(1, 0, 0, 1, 0, 0);
-    ink.clearRect(0, 0, c.width, c.height);
-    ink.setTransform(ctx.getTransform());
-    drawFigure(ink, cam, sim, t);
-    applyChalkGrain(ink);
-    drawBoard(ctx, cam, t);
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(chalkInk, 0, 0);
-    ctx.restore();
-    return;
-  }
-  drawFigure(ctx, cam, sim, t);
+/** Double-ruled frame of an engraved plate. */
+function drawFrame(ctx: CanvasRenderingContext2D, cam: Camera, t: Theme) {
+  ctx.strokeStyle = t.ink;
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(9, 9, cam.width - 18, cam.height - 18);
+  ctx.lineWidth = 0.7;
+  ctx.strokeRect(14, 14, cam.width - 28, cam.height - 28);
 }
 
-function drawFigure(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation, t: Theme) {
+function drawStatic(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation, t: Theme) {
   const body = sim.body;
-  if (!t.chalk) {
+  if (t.engraving) drawPaper(ctx, cam, t);
+  else {
     ctx.fillStyle = t.bg;
     ctx.fillRect(0, 0, cam.width, cam.height);
     if (t.stars) drawStars(ctx, cam, body, t.ink);
@@ -530,6 +540,7 @@ function drawFigure(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation,
   if (Rpx < LOCAL_SURFACE_PX) drawPlanetDisk(ctx, cam, body, t);
   else drawLocalSurface(ctx, cam, body, t);
   drawMountain(ctx, cam, body, sim.params.altitude, t);
+  if (t.engraving) drawFrame(ctx, cam, t);
 }
 
 function blitStatic(main: CanvasRenderingContext2D, cam: Camera, sim: Simulation, t: Theme) {
@@ -554,40 +565,41 @@ function blitStatic(main: CanvasRenderingContext2D, cam: Camera, sim: Simulation
 }
 
 export function drawScene(ctx: CanvasRenderingContext2D, cam: Camera, sim: Simulation, labels: SceneLabels, opts: SceneOptions) {
-  const theme = opts.theme;
+  const t = opts.theme;
   const body = sim.body;
-  blitStatic(ctx, cam, sim, theme);
-  // Moving chalk drawing uses grainy paints instead of a full-screen grain pass.
-  const paint = (c: string): Paint => (theme.chalk ? chalkPaint(ctx, c) : c);
-  const t: Theme = theme;
-  const tp = { ...theme, trail: paint(theme.trail), ghost: paint(theme.ghost), ghostLetter: paint(theme.ghostLetter), ink: paint(theme.ink), ball: paint(theme.ball) };
+  blitStatic(ctx, cam, sim, t);
 
-  for (const g of sim.ghosts) drawTrail(ctx, cam, g, false, tp);
-  if (sim.current) drawTrail(ctx, cam, sim.current, true, tp);
-  for (const g of sim.ghosts) drawShotLabel(ctx, cam, g, tp);
-  if (sim.current && sim.current.flight.status !== 'flying') drawShotLabel(ctx, cam, sim.current, tp);
+  for (const g of sim.ghosts) drawTrail(ctx, cam, g, false, t);
+  if (sim.current) drawTrail(ctx, cam, sim.current, true, t);
+  for (const g of sim.ghosts) drawShotLabel(ctx, cam, g, t);
+  if (sim.current && sim.current.flight.status !== 'flying') drawShotLabel(ctx, cam, sim.current, t);
 
   const lp = sim.launchPoint;
   const lx = cam.toScreenX(lp.x);
   const ly = cam.toScreenY(lp.y);
-  drawCannon(ctx, lx, ly, tp);
+  drawCannon(ctx, lx, ly, t);
+  // Newton marked the mountain top with V.
+  if (t.engraving) mathLetter(ctx, lx - 44, ly - 6, 'V', t.ink, t.fontMath, 22, { halo: t.halo });
 
   // Vectors: on the flying ball, or a preview of v₀ at the cannon before firing.
   const shot = sim.current;
   const flying = shot && shot.flight.status === 'flying';
   const ballState = shot ? shot.flight.state : { ...lp, vx: sim.params.v0 };
   if (opts.vectors && (flying || !shot)) {
+    const dragOn = shot ? shot.flight.env.drag : false;
+    const fr = dragOn && shot ? forces(shot.flight.state, shot.flight.env) : null;
     drawVectors(ctx, cam, ballState, body, body.radius + (shot ? shot.params.altitude : sim.params.altitude), t, {
       components: opts.components,
+      drag: fr ? { x: fr.dx, y: fr.dy } : undefined,
     });
   }
-  drawBall(ctx, cam.toScreenX(ballState.x), cam.toScreenY(ballState.y), tp);
+  drawBall(ctx, cam.toScreenX(ballState.x), cam.toScreenY(ballState.y), t);
 
   const showCaption = cam.width >= 520;
-  drawScaleBar(ctx, cam, labels.distance, tp, showCaption ? cam.height - 44 : cam.height - 18);
-  if (showCaption) drawCaption(ctx, cam, labels.caption, tp);
+  const inset = t.engraving ? 12 : 0;
+  drawScaleBar(ctx, cam, labels.distance, t, (showCaption ? cam.height - 44 : cam.height - 18) - inset);
+  if (showCaption) drawCaption(ctx, cam, labels.caption, t, inset);
 
-  // The height tag stays crisp (not chalky): it is UI, not part of the figure.
   if (sim.params.altitude * cam.scale < 2) {
     tag(ctx, lx - 10, ly - 26, labels.heightTag, t.fontUi, t.overlayInk, t.overlayBg, t.overlayLine);
   }
