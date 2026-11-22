@@ -14,7 +14,7 @@ The spec is solid. These are the problems I found and how the plan fixes them:
 | 1 | Altitude slider runs **10–1000 km**, but the Everest preset is **8.85 km**, below the minimum. | Slider runs **1–1000 km** on a log scale. Presets: Everest 8.85 km, Kármán line 100 km, ISS 400 km. |
 | 2 | **Energy bar with negative PE.** E_p = −GMm/r is always negative, so a two-color bar that adds to a constant can't be drawn honestly. | Signed bar chart with a zero line: E_k (+), E_p (−), total ε. **ε < 0 → bound, ε = 0 → escape threshold, ε > 0 → escapes.** This is the strongest teaching point in the app. |
 | 3 | **Drag makes total energy drop**, so "total stays constant" isn't true when drag is on. | Add a third segment, "lost to drag / heat" (*hővé alakult*), and say why total falls. |
-| 4 | **Realistic drag is too strong to show.** At 8.85 km and 7.9 km/s (about Mach 25), a real cannonball stops within seconds. You'd see no spiral. | Use an exponential atmosphere with a **teaching-scale ballistic coefficient** (one "drag strength" control), labelled *simplified model*. Hide the toggle on the Moon, which has no atmosphere. Mars gets a thin atmosphere. |
+| 4 | **Realistic drag is too strong to show.** At 8.85 km and 7.9 km/s, a 10 kg cannonball loses half its speed in about 1 s. | Drag gets **two labelled modes, no free slider**. **Realistic** (*Valósághű*): the ball stops almost at once, which shows why Newton's mountain is an idealisation and why real satellites fly above the atmosphere. **Accelerated orbital decay** (*Felgyorsított pályacsökkenés*, ×1000): launch above about 150 km, where real drag is tiny, and watch the orbit slowly spiral down, the way real satellites eventually fall back unless they are boosted. Only the time is compressed, and the label says so. No atmosphere on the Moon. |
 | 5 | **Scale.** Earth's radius is 6371 km, but the 1 s fall is 4.9 m, a zoom range of about 10⁶×. A circle 6×10⁶ px wide renders badly on canvas, and an 8.85 km mountain is invisible at full-planet zoom. | At high zoom, draw the surface as a local polyline. At low zoom, draw the mountain and cannon as a screen-space illustration with a small "not to scale" tag. Add a **camera follow** mode. |
 | 6 | **1x real-time shows almost nothing at planet zoom.** The ball moves about 1 px/s. | On launch at 1x, the camera auto-frames the cannon. A "4.9 m" drop ruler appears after t = 1 s. |
 | 7 | **Arrow lengths:** velocity (m/s) and force (N) have different units, and the vectors must stay readable at every zoom. | Arrows sized in **screen pixels** (fixed base length, scaled by the value relative to v₁ or F at launch) and kept independent of zoom. Real values go in the pill labels. |
@@ -43,8 +43,10 @@ src/
   physics/
     bodies.ts            # Earth/Moon/Mars: GM, R, atmosphere {rho0, H, cutoff}
     orbitalPhysics.ts    # state, accel (gravity + drag), rk4Step, simulate(dt)
+    vec2.ts              # tiny 2D vector math (no library needed)
     orbitalElements.ts   # ε, h, e, a, periapsis/apoapsis, period, classify()
-    physics.test.ts
+    kepler.ts            # analytic reference: exact conic & position-at-time (for tests + predicted orbit)
+    __tests__/           # see §8
   sim/
     useSimulation.ts     # rAF loop, time warp, substepping, events (crash/escape)
     store.ts             # Zustand (or useReducer): params, sim state, ghosts, ui
@@ -106,6 +108,7 @@ src/
   2. *8 km / 5 m:* 1x speed, zoomed in. After 1 s the ball has moved about 7.9 km and fallen 4.9 m, which is exactly how much the surface curves away. That's why it never lands.
   3. *Circular orbit:* find v₀ so the ball comes back to the cannon. The 90° marker stays on, and the measured T is compared with the predicted T.
   4. *Ellipse → escape:* raise v₀ step by step. The ghost fan shows the ellipse growing, and at v₂ the orbit opens up as ε crosses 0.
+- **Graphs tab (*Grafikonok*):** altitude r(t), speed v(t), and E_c / E_p / total vs time, plotted live (lightweight canvas plot). Students see the energy trade-off as curves, and the flat total line is visible proof of conservation.
 - **Bilingual EN/HU:** every string, formula label and lesson text goes in a typed dictionary (a missing key is a compile error). The language choice is remembered in localStorage.
 
 ## 5. Layout
@@ -120,14 +123,46 @@ src/
 | M | Deliverable | Done when |
 |---|---|---|
 | **M1** | Scaffold: Vite + React + TS + Tailwind + KaTeX + singlefile; lint; Vitest | `npm run build` gives one `dist/index.html` that renders a KaTeX formula offline |
-| **M2** | Physics core and tests | Tests pass: 4.90 m fall in 1 s, circular period matches Kepler within 0.1%, energy drift < 10⁻⁶ per orbit, v₂ escapes, crash detected |
+| **M2** | Physics core, analytic reference and the full verification suite (§8) | Every check in §8 passes; validation sheet drafted |
 | **M3** | Canvas, camera and planet (zoom, pan, pinch, local-surface mode) | Smooth zoom from the full planet down to 1 m/px on desktop and on mobile emulation |
 | **M4** | Sim loop, trail, warp, controls, ghosts, events | All four trajectory types happen naturally; warp keys work |
 | **M5** | Vectors, projections, 90° marker, labels | Screenshots are legible at both zoom extremes |
-| **M6** | Formula drawer, energy bar, telemetry | Live numbers match the physics; the drag-loss segment works |
+| **M6** | Formula drawer, energy bar, telemetry, graphs tab | Live numbers match the physics; the drag-loss segment works |
 | **M7** | i18n EN/HU and lesson mode | Full HU pass with no missing strings; all 4 challenges pass their checks |
 | **M8** | Responsive polish, projector mode, shortcuts, a11y | Playwright screenshots at 1440×900 and 390×844 in EN and HU look right |
 | **M9** | Deploy | GitHub Pages workflow (or Vercel), README with classroom guide |
+
+## 8. Correctness & verification (people learn from this, so it must be right)
+
+**No third-party physics engine.** Game engines (Matter.js, Box2D…) simulate rigid bodies under constant downward gravity, not inverse-square orbits. The physics here is a few dozen lines of our own math, so every line can be checked. Every number on screen comes from the same tested functions; the UI does no physics of its own.
+
+**Layer 1: an independent analytic reference.** Without drag, the exact answer is known in closed form (Kepler conics). `kepler.ts` computes it separately from the integrator, and the tests compare the two:
+- the simulated trajectory stays on the exact ellipse or hyperbola (point-by-point error < 1 m per 1000 km);
+- the measured period matches Kepler's third law, T = 2π√(a³/KM), within 0.01%;
+- the sub-orbital landing point and flight time match the analytic intersection with the surface;
+- a launch at exactly v_II gives total energy ε = 0 and the ball escapes; 0.999·v_II stays bound.
+
+**Layer 2: conservation laws (invariants).** Checked in tests and shown live in a hidden debug overlay (`D` key):
+- total energy and angular momentum stay constant without drag (drift < 10⁻⁸ per orbit);
+- with drag, energy only ever decreases, and the "lost to heat" amount equals the work done by drag.
+
+**Layer 3: convergence.** Halving the time step must cut the error about 16×. That is RK4's mathematical signature, and it proves the integrator is implemented correctly, not just "close enough".
+
+**Layer 4: textbook and real-world numbers.**
+- v_I = 7.91 / 1.68 / 3.55 km/s and v_II = 11.2 / 2.38 / 5.03 km/s at the surface (Earth / Moon / Mars).
+- In the first second the ball falls 4.90 m, and the surface curves 5.0 m away over 8 km.
+- Circular orbit at 400 km: v = 7.67 km/s, T ≈ 92.4 min (the ISS's real period is about 92–93 min).
+- Constants are taken from the NASA planetary fact sheets, with the source cited in code.
+
+**Layer 5: randomised (property-based) tests.** Thousands of random combinations of planet, height and speed, checking that invariants hold, the classification (crash / circle / ellipse / escape) agrees with the sign of ε and the periapsis, and nothing produces NaN or infinity.
+
+**Layer 6: vectors and display.**
+- F_g always points at the planet's centre (angle error < 0.01°), and v_r and v_t add up exactly to v.
+- The 90° marker appears exactly at periapsis and apoapsis and throughout a circular orbit, and nowhere else.
+- Rounding and significant figures: HU shows `7,91 km/s`, EN `7.91 km/s`; tests cover the formatting.
+- Playwright screenshots at both zoom extremes, in EN and HU.
+
+**Layer 7: human sign-off.** `docs/VALIDATION.md` lists every formula, constant and number the app shows, with its expected value and source, written to be checked by a physics teacher against the class textbook. Simplifications (2D, point mass, non-rotating planet, simple atmosphere) are stated openly in the app's *About the model* (*A modellről*) box.
 
 ## 7. Decisions (confirmed)
 1. Default language: **Hungarian** (EN one click away).
