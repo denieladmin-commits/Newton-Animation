@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Design prototípusok · Newton ágyúgolyója</title>
+<!-- Prototype only: the final app embeds its fonts so it stays offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,600&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b1020; --ink: #e5e9f2; --muted: #8b93a7; --line: #232a3d; --card: #11172a; --pick: #f5b942;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 'IBM Plex Sans', system-ui, sans-serif; }
+  header { padding: 40px 24px 8px; max-width: 1320px; margin: 0 auto; }
+  h1 { font: 600 28px/1.2 'IBM Plex Sans', sans-serif; margin: 0 0 8px; letter-spacing: -0.01em; }
+  header p { color: var(--muted); margin: 0; max-width: 70ch; }
+  section { max-width: 1320px; margin: 0 auto; padding: 32px 24px 8px; }
+  section > h2 { font: 600 13px/1 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .12em; color: var(--pick); margin: 0 0 6px; }
+  section > p { margin: 0 0 16px; color: var(--muted); }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  .opt { display: flex; flex-direction: column; justify-content: flex-start; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; text-align: left; color: inherit; font: inherit; padding: 0; transition: border-color .15s, transform .15s; }
+  .opt:hover { border-color: #3a4462; }
+  .opt:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--pick); box-shadow: 0 0 0 3px rgba(245,185,66,.18); }
+  .opt svg { display: block; width: 100%; height: auto; }
+  .cap { padding: 12px 14px 14px; border-top: 1px solid var(--line); }
+  .cap b { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+  .cap b .tag { font: 600 11px/1 'IBM Plex Mono', monospace; color: #0b1020; background: var(--muted); border-radius: 6px; padding: 4px 6px; }
+  .opt[aria-pressed="true"] .cap b .tag { background: var(--pick); }
+  .cap span { display: block; color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+  footer { position: sticky; bottom: 0; background: rgba(11,16,32,.94); backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 14px 24px; margin-top: 32px; }
+  footer div { max-width: 1320px; margin: 0 auto; font: 14px/1.5 'IBM Plex Mono', monospace; }
+  footer em { color: var(--pick); font-style: normal; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Newton ágyúgolyója · design prototípusok</h1>
+  <p>Ugyanaz a jelenet minden változatban: lövés a 400 km-es hegyről, korábbi lövések (A–C), a golyó körpályán. Kattints egy-egy változatra mind az öt kérdésnél; a választásod alul összegződik. A 2–5. kérdés mintái a jelenlegi sötét stílusban vannak, de bármelyik összestílussal kombinálhatók.</p>
+</header>
+
+<section id="style"><h2>1 · Összkép</h2><p>Az egész alkalmazás hangulata: színek, betűtípus, háttér.</p><div class="grid"></div></section>
+<section id="panel"><h2>2 · Vezérlőpanel elrendezése</h2><p>Hogyan érik el a diákok és a tanár a beállításokat.</p><div class="grid"></div></section>
+<section id="arrows"><h2>3 · Vektornyilak (M5)</h2><p>A sebesség (v) és a gravitációs erő (F) nyila, összetevőkkel és a 90°-os jellel.</p><div class="grid"></div></section>
+<section id="energy"><h2>4 · Energiadiagram (M6)</h2><p>E<sub>k</sub>, E<sub>p</sub> és a teljes energia E. Példa: körpálya 400 km-en, 10 kg-os golyó; E &lt; 0, tehát a golyó a bolygó körül marad.</p><div class="grid"></div></section>
+<section id="planet"><h2>5 · Bolygó megjelenése</h2><p>Teljes bolygónézetben; közelítéskor mindhárom a valódi felszínt mutatja.</p><div class="grid"></div></section>
+
+<footer><div id="summary">Még nincs választás.</div></footer>
+
+<script>
+// ───────────────────────── shared geometry ─────────────────────────
+const W = 400, H = 280;
+const P = { cx: 170, cy: 360, R: 190 };          // planet (centre below the frame)
+const ORBIT = 206;                                // circular orbit radius (px)
+const TH = 35 * Math.PI / 180;                    // ball angle from the top, clockwise
+const ball = { x: P.cx + ORBIT * Math.sin(TH), y: P.cy - ORBIT * Math.cos(TH) };
+const vdir = { x: Math.cos(TH), y: Math.sin(TH) };          // tangent, clockwise
+const fdir = { x: -Math.sin(TH), y: Math.cos(TH) };         // towards the centre
+
+const arcPath = (r, a0, a1) => {                  // clockwise from top, degrees
+  const p = a => [P.cx + r * Math.sin(a * Math.PI / 180), P.cy - r * Math.cos(a * Math.PI / 180)];
+  const [x0, y0] = p(a0), [x1, y1] = p(a1);
+  return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+};
+// sub-orbital crash paths: start at the cannon, curve down to the surface
+const crash = (endDeg, bend) => {
+  const top = [P.cx, P.cy - P.R - 16];
+  const e = [P.cx + P.R * Math.sin(endDeg * Math.PI / 180), P.cy - P.R * Math.cos(endDeg * Math.PI / 180)];
+  return `M${top[0]} ${top[1]} Q ${P.cx + bend} ${top[1] - 4} ${e[0].toFixed(1)} ${e[1].toFixed(1)}`;
+};
+const end = deg => [P.cx + (P.R + 12) * Math.sin(deg * Math.PI / 180), P.cy - (P.R + 12) * Math.cos(deg * Math.PI / 180)];
+
+function arrow(x, y, dx, dy, len, color, width, head, extra = '') {
+  const x2 = x + dx * len, y2 = y + dy * len;
+  const hx = x2 - dx * head, hy = y2 - dy * head;
+  const nx = -dy * head * 0.55, ny = dx * head * 0.55;
+  return `<line x1="${x}" y1="${y}" x2="${hx}" y2="${hy}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" ${extra}/>
+    <path d="M${x2} ${y2} L${hx + nx} ${hy + ny} L${hx - nx} ${hy - ny}Z" fill="${color}" ${extra}/>`;
+}
+const rightAngle = (s, color, w = 1.6) => {
+  const a = { x: ball.x + vdir.x * s, y: ball.y + vdir.y * s }, b = { x: ball.x + fdir.x * s, y: ball.y + fdir.y * s };
+  const c = { x: a.x + fdir.x * s, y: a.y + fdir.y * s };
+  return `<path d="M${a.x} ${a.y} L${c.x} ${c.y} L${b.x} ${b.y}" fill="none" stroke="${color}" stroke-width="${w}"/>`;
+};
+const stars = (n, seed, color = '#cbd5e1') => {
+  let s = seed, out = '';
+  const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) out += `<circle cx="${(r() * W).toFixed(1)}" cy="${(r() * H).toFixed(1)}" r="${(0.4 + r() * 0.9).toFixed(2)}" fill="${color}" opacity="${(0.25 + r() * 0.6).toFixed(2)}"/>`;
+  return out;
+};
+
+// ───────────────────────── planet looks ─────────────────────────
+function planetGlobe(id) {
+  return `<defs>
+      <radialGradient id="ocean${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#3b82c4"/><stop offset=".6" stop-color="#1d4f91"/><stop offset="1" stop-color="#0a1f40"/></radialGradient>
+      <radialGradient id="halo${id}" cx="50%" cy="50%" r="50%"><stop offset=".9" stop-color="#60a5fa" stop-opacity=".45"/><stop offset="1" stop-color="#60a5fa" stop-opacity="0"/></radialGradient>
+      <clipPath id="pc${id}"><circle cx="${P.cx}" cy="${P.cy}" r="${P.R}"/></clipPath></defs>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R + 18}" fill="url(#halo${id})"/>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="url(#ocean${id})"/>
+    <g clip-path="url(#pc${id})" opacity=".9">
+      <path d="M95 210 q30 -40 70 -20 q30 20 10 50 q-40 30 -80 -30z" fill="#3f7d3f"/>
+      <path d="M250 175 q40 -15 60 15 q10 35 -30 40 q-40 -10 -30 -55z" fill="#6b6a3a"/>
+      <ellipse cx="200" cy="158" rx="70" ry="10" fill="#e8f1fb"/>
+      <ellipse cx="150" cy="240" rx="60" ry="5" fill="#fff" opacity=".25"/><ellipse cx="270" cy="250" rx="50" ry="4" fill="#fff" opacity=".25"/>
+    </g>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="none" stroke="#93c5fd" stroke-opacity=".8" stroke-width="1.2"/>`;
+}
+function planetSection(id) {
+  const layers = [[1, '#5b3a22', 'kéreg'], [0.9, '#c2410c', 'köpeny'], [0.55, '#f59e0b', 'külső mag'], [0.3, '#fde68a', 'belső mag']];
+  return `<defs><radialGradient id="halo${id}" cx="50%" cy="50%" r="50%"><stop offset=".92" stop-color="#60a5fa" stop-opacity=".4"/><stop offset="1" stop-color="#60a5fa" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R + 14}" fill="url(#halo${id})"/>
+    ${layers.map(([f, c]) => `<circle cx="${P.cx}" cy="${P.cy}" r="${P.R * f}" fill="${c}"/>`).join('')}
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="none" stroke="#3d6b45" stroke-width="5"/>
+    ${layers.map(([f, , l], i) => `<text x="${P.cx}" y="${P.cy - P.R * f + (i === 0 ? 14 : 13)}" text-anchor="middle" font-size="9.5" fill="#fff" fill-opacity=".85" font-family="IBM Plex Sans">${l}</text>`).join('')}`;
+}
+function planetFlat() {
+  return `<circle cx="${P.cx}" cy="${P.cy}" r="${P.R + 5}" fill="none" stroke="#60a5fa" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 3"/>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="#1e3a5f"/>
+    <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="none" stroke="#93c5fd" stroke-width="1.5"/>`;
+}
+
+// ───────────────────────── scene pieces ─────────────────────────
+const cannon = (c = '#94a3b8', fill = '#1e293b') => `<g transform="translate(${P.cx} ${P.cy - P.R - 16})">
+    <path d="M-10 16 L0 2 L10 16Z" fill="#6b6158"/><rect x="-14" y="-4" width="16" height="7" rx="2" fill="${fill}" stroke="${c}" stroke-width="1.2"/>
+    <circle cx="-8" cy="5" r="4" fill="${fill}" stroke="${c}" stroke-width="1.2"/></g>`;
+function trails(t) {
+  const g = t.ghost;
+  return `${[[11, 24, 'A'], [22, 52, 'B'], [44, 110, 'C']].map(([d, b, l], i) => {
+      const [ex, ey] = end(d);
+      return `<path d="${crash(d, b)}" fill="none" stroke="${g[i]}" stroke-width="${t.ghostW}" stroke-opacity="${t.ghostOp}" ${t.dash ? 'stroke-dasharray="5 4"' : ''}/>
+        <circle cx="${ex}" cy="${ey}" r="9" fill="${t.pillBg}" stroke="${g[i]}" stroke-width="1.3"/>
+        <text x="${ex}" y="${ey + 3.5}" text-anchor="middle" font-size="10" font-weight="700" fill="${g[i]}" font-family="${t.font}">${l}</text>`;
+    }).join('')}
+    ${t.glow ? `<path d="${arcPath(ORBIT, -4, 35)}" fill="none" stroke="${t.trail}" stroke-width="9" stroke-opacity=".18" stroke-linecap="round"/>` : ''}
+    <path d="${arcPath(ORBIT, -4, 35)}" fill="none" stroke="${t.trail}" stroke-width="${t.trailW}" stroke-linecap="round"/>
+    <path d="${arcPath(ORBIT, 35, 356)}" fill="none" stroke="${t.trail}" stroke-width="1" stroke-opacity=".35" stroke-dasharray="2 5"/>`;
+}
+const ballDot = t => `${t.glow ? `<circle cx="${ball.x}" cy="${ball.y}" r="14" fill="${t.trail}" opacity=".25"/>` : ''}
+  <circle cx="${ball.x}" cy="${ball.y}" r="5" fill="${t.ball}" stroke="${t.ballStroke}" stroke-width="1.5"/>`;
+
+// ───────────────────────── vector arrow styles ─────────────────────────
+function vectorsGlow() {
+  const v = '#38bdf8', f = '#fb7185';
+  return `<defs><filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <g filter="url(#gl)">${arrow(ball.x, ball.y, vdir.x, vdir.y, 72, v, 5, 14)}${arrow(ball.x, ball.y, fdir.x, fdir.y, 62, f, 5, 14)}</g>
+    ${rightAngle(11, '#f8fafc', 1.8)}
+    ${pillLabel(ball.x + vdir.x * 86, ball.y + vdir.y * 86 + 4, 'v', v, '#060b19')}${pillLabel(ball.x + fdir.x * 78 - 6, ball.y + fdir.y * 78 + 10, 'F', f, '#060b19')}`;
+}
+const vecLetter = (x, y, l, c) => `<text x="${x}" y="${y}" font-family="Newsreader" font-style="italic" font-size="21" fill="${c}">${l}</text>
+  <line x1="${x + 1}" y1="${y - 17}" x2="${x + 12}" y2="${y - 17}" stroke="${c}" stroke-width="1.2"/><path d="M${x + 14} ${y - 17} l-4 -2.5 v5z" fill="${c}"/>`;
+function vectorsTextbook() {
+  const ink = '#e5e9f2';
+  return `${arrow(ball.x, ball.y, vdir.x, vdir.y, 72, '#7dd3fc', 2, 10)}${arrow(ball.x, ball.y, fdir.x, fdir.y, 62, '#fda4af', 2, 10)}
+    <line x1="${ball.x}" y1="${ball.y}" x2="${ball.x + vdir.x * 110}" y2="${ball.y + vdir.y * 110}" stroke="${ink}" stroke-opacity=".3" stroke-dasharray="3 3"/>
+    ${rightAngle(9, ink, 1)}
+    ${vecLetter(ball.x + vdir.x * 80 + 6, ball.y + vdir.y * 80 + 2, 'v', '#7dd3fc')}
+    ${vecLetter(ball.x + fdir.x * 70 - 18, ball.y + fdir.y * 70 + 12, 'F', '#fda4af')}`;
+}
+function vectorsLabels() {
+  const v = '#38bdf8', f = '#fb7185';
+  return `${arrow(ball.x, ball.y, vdir.x, vdir.y, 64, v, 4, 12)}${arrow(ball.x, ball.y, fdir.x, fdir.y, 56, f, 4, 12)}
+    ${rightAngle(10, '#f8fafc', 1.6)}
+    <line x1="${ball.x + vdir.x * 40}" y1="${ball.y + vdir.y * 40}" x2="${310}" y2="${96}" stroke="${v}" stroke-width="1.2" stroke-opacity=".8"/>
+    <line x1="${ball.x + fdir.x * 34}" y1="${ball.y + fdir.y * 34}" x2="${176}" y2="${236}" stroke="${f}" stroke-width="1.2" stroke-opacity=".8"/>
+    ${bigLabel(246, 52, 'v = 7,67 km/s', 'sebesség', v)}
+    ${bigLabel(36, 214, 'F = 86,9 N', 'gravitációs erő', f)}`;
+}
+function pillLabel(x, y, text, color, bg) {
+  return `<rect x="${x - 12}" y="${y - 12}" width="24" height="22" rx="11" fill="${bg}" stroke="${color}" stroke-width="1.5"/>
+    <text x="${x}" y="${y + 4}" text-anchor="middle" font-family="IBM Plex Sans" font-weight="700" font-style="italic" font-size="13" fill="${color}">${text}</text>`;
+}
+function bigLabel(x, y, value, name, color) {
+  return `<rect x="${x}" y="${y}" width="140" height="44" rx="10" fill="#060b19" fill-opacity=".9" stroke="${color}" stroke-width="2"/>
+    <text x="${x + 12}" y="${y + 20}" font-family="IBM Plex Mono" font-weight="600" font-size="15" fill="${color}">${value}</text>
+    <text x="${x + 12}" y="${y + 36}" font-family="IBM Plex Sans" font-size="11" fill="#cbd5e1">${name}</text>`;
+}
+
+// ───────────────────────── full-app mockups (style) ─────────────────────────
+const THEMES = {
+  space: { bg: '#060b19', panel: '#0d1426', line: '#1e293b', ink: '#e2e8f0', muted: '#94a3b8', accent: '#f59e0b', accentInk: '#0b1020',
+    trail: '#38bdf8', ball: '#f8fafc', ballStroke: '#38bdf8', ghost: ['#a78bfa', '#f472b6', '#facc15'], ghostW: 2, ghostOp: .6, glow: true,
+    pillBg: '#060b19', font: 'IBM Plex Sans', mono: 'IBM Plex Mono', trailW: 2.2, planet: id => planetGlobe(id), stars: true, vectors: vectorsGlow },
+  paper: { bg: '#f4efe4', panel: '#fbf8f1', line: '#d8cfbd', ink: '#1f2a44', muted: '#6b6457', accent: '#1f2a44', accentInk: '#fbf8f1',
+    trail: '#1d4ed8', ball: '#1f2a44', ballStroke: '#1f2a44', ghost: ['#7c3aed', '#be185d', '#a16207'], ghostW: 1.4, ghostOp: .85, glow: false, dash: true,
+    pillBg: '#fbf8f1', font: 'Newsreader', mono: 'IBM Plex Mono', trailW: 2,
+    planet: () => `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#1f2a44" stroke-opacity=".18" stroke-width="1.2"/></pattern></defs>
+      <circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="url(#hatch)" stroke="#1f2a44" stroke-width="1.6"/>`,
+    stars: false, grid: true,
+    vectors: () => `${arrow(ball.x, ball.y, vdir.x, vdir.y, 70, '#1d4ed8', 2.2, 10)}${arrow(ball.x, ball.y, fdir.x, fdir.y, 60, '#b91c1c', 2.2, 10)}${rightAngle(9, '#1f2a44', 1)}
+      ${vecLetter(ball.x + vdir.x * 78 + 6, ball.y + vdir.y * 78 + 2, 'v', '#1d4ed8')}${vecLetter(ball.x + fdir.x * 66 - 18, ball.y + fdir.y * 66 + 12, 'F', '#b91c1c')}` },
+  projector: { bg: '#000000', panel: '#0a0a0a', line: '#3f3f3f', ink: '#ffffff', muted: '#d4d4d4', accent: '#ffd400', accentInk: '#000',
+    trail: '#00e5ff', ball: '#ffffff', ballStroke: '#000', ghost: ['#ffd400', '#ff4fd8', '#7CFF4F'], ghostW: 3, ghostOp: 1, glow: false,
+    pillBg: '#000', font: 'Atkinson Hyperlegible', mono: 'Atkinson Hyperlegible', trailW: 4,
+    planet: () => `<circle cx="${P.cx}" cy="${P.cy}" r="${P.R}" fill="#1a3a8a" stroke="#fff" stroke-width="3"/>`,
+    stars: false,
+    vectors: () => `${arrow(ball.x, ball.y, vdir.x, vdir.y, 74, '#00e5ff', 6, 16)}${arrow(ball.x, ball.y, fdir.x, fdir.y, 64, '#ff5a5a', 6, 16)}${rightAngle(12, '#fff', 2.5)}
+      <text x="${ball.x + vdir.x * 84}" y="${ball.y + vdir.y * 84 + 14}" font-family="Atkinson Hyperlegible" font-weight="700" font-size="22" fill="#00e5ff">v</text>
+      <text x="${ball.x + fdir.x * 74 - 14}" y="${ball.y + fdir.y * 74 + 14}" font-family="Atkinson Hyperlegible" font-weight="700" font-size="22" fill="#ff5a5a">F</text>` },
+};
+
+function sceneSVG(t, id, opts = {}) {
+  const grid = t.grid ? `<defs><pattern id="gp${id}" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2a44" stroke-opacity=".08"/></pattern></defs><rect width="${W}" height="${H}" fill="url(#gp${id})"/>` : '';
+  return `<rect width="${W}" height="${H}" fill="${t.bg}"/>${grid}${t.stars ? stars(70, 11 + id.length) : ''}
+    ${(opts.planet ?? t.planet)(id)}${trails(t)}${cannon(t.grid ? '#1f2a44' : '#94a3b8', t.grid ? '#fbf8f1' : '#1e293b')}
+    ${(opts.vectors ?? t.vectors)()}${ballDot(t)}`;
+}
+
+function appMock(key) {
+  const t = THEMES[key];
+  const big = key === 'projector';
+  const fs = big ? 15 : 12;
+  const ctrl = (y, label, value) => `<text x="452" y="${y}" font-family="${t.font}" font-size="${big ? 11 : 9.5}" fill="${t.muted}" letter-spacing=".06em">${label}</text>
+    <text x="452" y="${y + 18}" font-family="${t.mono}" font-size="${fs}" fill="${t.ink}">${value}</text>
+    <rect x="452" y="${y + 26}" width="176" height="${big ? 6 : 4}" rx="3" fill="${t.line}"/><rect x="452" y="${y + 26}" width="${y % 3 ? 120 : 90}" height="${big ? 6 : 4}" rx="3" fill="${t.trail}"/>`;
+  return `<svg viewBox="0 0 640 300" role="img" aria-label="${key}">
+    <rect width="640" height="300" fill="${t.bg}"/>
+    <svg x="0" y="10" width="430" height="290" viewBox="0 0 ${W} ${H}">${sceneSVG(t, 'm' + key)}</svg>
+    <rect x="12" y="12" width="${big ? 250 : 210}" height="${big ? 44 : 36}" rx="8" fill="${t.panel}" fill-opacity=".92" stroke="${t.line}"/>
+    <text x="24" y="${big ? 31 : 27}" font-family="${t.font}" font-weight="700" font-size="${big ? 15 : 12}" fill="${t.ink}">${key === 'paper' ? 'Körpálya · T = 92,4 perc' : '1. kör kész · T = 92,4 perc'}</text>
+    <text x="24" y="${big ? 48 : 41}" font-family="${t.mono}" font-size="${big ? 12 : 9.5}" fill="${t.muted}">h = 400 km · v = 7,67 km/s</text>
+    <rect x="436" y="0" width="204" height="300" fill="${t.panel}"/><line x1="436" y1="0" x2="436" y2="300" stroke="${t.line}"/>
+    <text x="452" y="30" font-family="${t.font}" font-weight="700" font-size="${big ? 18 : 15}" fill="${key === 'space' ? '#7dd3fc' : t.ink}">${key === 'paper' ? '<tspan font-style="italic">Newton</tspan> ágyúgolyója' : 'Newton ágyúgolyója'}</text>
+    <rect x="452" y="46" width="176" height="${big ? 36 : 30}" rx="${key === 'paper' ? 4 : 8}" fill="${t.accent}"/>
+    <text x="540" y="${big ? 69 : 66}" text-anchor="middle" font-family="${t.font}" font-weight="700" font-size="${big ? 17 : 13}" fill="${t.accentInk}">Tűz!</text>
+    ${ctrl(102, 'HEGY MAGASSÁGA', 'h = 400 km')}${ctrl(152, 'KEZDŐSEBESSÉG', 'v₀ = 7,67 km/s')}
+    <text x="452" y="208" font-family="${t.font}" font-size="${big ? 11 : 9.5}" fill="${t.muted}" letter-spacing=".06em">LÉGELLENÁLLÁS</text>
+    <rect x="452" y="216" width="86" height="${big ? 30 : 26}" rx="${key === 'paper' ? 3 : 7}" fill="none" stroke="${t.trail}" stroke-width="1.5"/><text x="495" y="${big ? 236 : 233}" text-anchor="middle" font-family="${t.font}" font-size="${fs}" fill="${t.ink}">Ki</text>
+    <rect x="542" y="216" width="86" height="${big ? 30 : 26}" rx="${key === 'paper' ? 3 : 7}" fill="none" stroke="${t.line}" stroke-width="1.5"/><text x="585" y="${big ? 236 : 233}" text-anchor="middle" font-family="${t.font}" font-size="${fs}" fill="${t.muted}">Be</text>
+    <text x="452" y="280" font-family="${t.mono}" font-size="${big ? 11 : 9}" fill="${t.muted}">${key === 'paper' ? 'ábra 1 · valódi méretarány' : '1× · 10× · 100× · 500× · 2000×'}</text>
+  </svg>`;
+}
+
+// ───────────────────────── control panel layouts ─────────────────────────
+const S = THEMES.space;
+const PW = 400, PH = 330;
+const panelFrame = inner => `<svg viewBox="0 0 ${PW} ${PH}"><rect width="${PW}" height="${PH}" fill="${S.panel}"/>${inner}</svg>`;
+const txt = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-family="${o.mono ? S.mono : S.font}" font-size="${o.size ?? 12}" font-weight="${o.w ?? 400}" fill="${o.c ?? S.ink}" ${o.anchor ? `text-anchor="${o.anchor}"` : ''} ${o.ls ? `letter-spacing="${o.ls}"` : ''}>${s}</text>`;
+const chip = (x, y, w, h, label, on, size = 12) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9" fill="${on ? 'rgba(56,189,248,.18)' : '#141c31'}" stroke="${on ? '#38bdf8' : '#2a3450'}"/>${txt(x + w / 2, y + h / 2 + 4, label, { anchor: 'middle', size, c: on ? '#e0f2fe' : S.muted })}`;
+const slider = (x, y, w, f) => `<rect x="${x}" y="${y}" width="${w}" height="5" rx="3" fill="#2a3450"/><rect x="${x}" y="${y}" width="${w * f}" height="5" rx="3" fill="#38bdf8"/><circle cx="${x + w * f}" cy="${y + 2.5}" r="7" fill="#38bdf8"/>`;
+
+const PANELS = {
+  list: () => panelFrame(`
+    <rect x="16" y="14" width="300" height="38" rx="10" fill="#f59e0b"/>${txt(166, 38, '🔥 Tűz!', { anchor: 'middle', w: 700, c: '#0b1020', size: 14 })}
+    ${chip(324, 14, 60, 38, '▶', false)}
+    ${txt(16, 76, 'ÉGITEST', { size: 10, c: S.muted, ls: '.08em' })}
+    ${chip(16, 84, 118, 32, 'Föld', true)}${chip(141, 84, 118, 32, 'Hold', false)}${chip(266, 84, 118, 32, 'Mars', false)}
+    ${txt(16, 140, 'HEGY MAGASSÁGA', { size: 10, c: S.muted, ls: '.08em' })}${txt(384, 140, 'h = 400 km', { anchor: 'end', mono: true })}
+    ${slider(16, 150, 368, .86)}
+    ${chip(16, 166, 118, 32, 'Everest', false, 11)}${chip(141, 166, 118, 32, 'Kármán', false, 11)}${chip(266, 166, 118, 32, 'ISS', true, 11)}
+    ${txt(16, 222, 'KEZDŐSEBESSÉG', { size: 10, c: S.muted, ls: '.08em' })}${txt(384, 222, 'v₀ = 7,67 km/s', { anchor: 'end', mono: true })}
+    ${slider(16, 232, 368, .55)}
+    ${chip(16, 248, 180, 32, 'v₁ = 7,67 km/s', true, 11)}${chip(204, 248, 180, 32, 'v₂ = 10,85 km/s', false, 11)}
+    ${txt(16, 304, 'LÉGELLENÁLLÁS', { size: 10, c: S.muted, ls: '.08em' })}${txt(16, 322, '… görgetve: sebesség, törlés', { size: 11, c: '#475569' })}`),
+  cards: () => panelFrame(`
+    ${[['Égitest', 'Föld', '🌍'], ['Hegy', '400 km', '⛰'], ['v₀', '7,67 km/s', '➜'], ['Levegő', 'Ki', '≋']].map(([k, v, i], n) => {
+      const x = 16 + (n % 2) * 188, y = 14 + Math.floor(n / 2) * 92;
+      return `<rect x="${x}" y="${y}" width="180" height="84" rx="14" fill="#141c31" stroke="${n === 2 ? '#38bdf8' : '#2a3450'}"/>
+        ${txt(x + 14, y + 22, k.toUpperCase(), { size: 10, c: S.muted, ls: '.08em' })}${txt(x + 166, y + 24, i, { anchor: 'end', size: 15 })}
+        ${txt(x + 14, y + 56, v, { mono: true, size: 21, w: 600 })}${txt(x + 14, y + 74, n === 2 ? '= 1,000 · v₁  körpálya' : 'koppints a módosításhoz', { size: 10, c: n === 2 ? '#7dd3fc' : '#475569' })}`;
+    }).join('')}
+    <rect x="16" y="202" width="368" height="56" rx="14" fill="#141c31" stroke="#38bdf8"/>
+    ${txt(30, 222, 'KEZDŐSEBESSÉG', { size: 10, c: S.muted, ls: '.08em' })}${slider(30, 236, 250, .55)}
+    ${chip(292, 214, 40, 32, 'v₁', true, 12)}${chip(336, 214, 40, 32, 'v₂', false, 12)}
+    <rect x="16" y="270" width="250" height="46" rx="12" fill="#f59e0b"/>${txt(141, 299, '🔥 Tűz!', { anchor: 'middle', w: 700, c: '#0b1020', size: 15 })}
+    ${chip(274, 270, 52, 46, '▶', false, 14)}${chip(332, 270, 52, 46, '2000×', false, 11)}`),
+  lesson: () => panelFrame(`
+    ${[1, 2, 3, 4].map(n => `<circle cx="${40 + (n - 1) * 106}" cy="30" r="13" fill="${n < 3 ? '#38bdf8' : n === 3 ? '#0b1020' : '#141c31'}" stroke="${n <= 3 ? '#38bdf8' : '#2a3450'}" stroke-width="2"/>${txt(40 + (n - 1) * 106, 35, n < 3 ? '✓' : String(n), { anchor: 'middle', w: 700, size: 12, c: n < 3 ? '#0b1020' : n === 3 ? '#7dd3fc' : S.muted })}${n < 4 ? `<line x1="${55 + (n - 1) * 106}" y1="30" x2="${131 + (n - 1) * 106}" y2="30" stroke="${n < 3 ? '#38bdf8' : '#2a3450'}" stroke-width="2"/>` : ''}`).join('')}
+    ${txt(40, 62, 'Bolygó', { anchor: 'middle', size: 10, c: S.muted })}${txt(146, 62, 'Hegy', { anchor: 'middle', size: 10, c: S.muted })}${txt(252, 62, 'Sebesség', { anchor: 'middle', size: 10, c: '#7dd3fc' })}${txt(358, 62, 'Lövés', { anchor: 'middle', size: 10, c: S.muted })}
+    <rect x="16" y="78" width="368" height="74" rx="12" fill="rgba(56,189,248,.08)" stroke="#1e3a5f"/>
+    ${txt(30, 100, '3. lépés · Milyen gyorsan lőjünk?', { w: 600, size: 13 })}
+    ${txt(30, 120, 'Jóslat: mi történik, ha a golyó pontosan', { size: 12, c: '#cbd5e1' })}${txt(30, 138, 'v₁ = 7,67 km/s sebességgel indul?', { size: 12, c: '#cbd5e1' })}
+    ${chip(16, 164, 118, 34, 'Visszaesik', false, 11)}${chip(141, 164, 118, 34, 'Körpálya', true, 11)}${chip(266, 164, 118, 34, 'Elszökik', false, 11)}
+    ${txt(16, 224, 'v₀ = 7,67 km/s', { mono: true, size: 14 })}${slider(16, 236, 368, .55)}
+    <rect x="16" y="262" width="368" height="44" rx="12" fill="#f59e0b"/>${txt(200, 289, 'Tovább: lövés →', { anchor: 'middle', w: 700, c: '#0b1020', size: 14 })}
+    ${txt(200, 324, 'Minden beállítás: Haladó mód', { anchor: 'middle', size: 10.5, c: '#64748b' })}`),
+};
+
+// ───────────────────────── energy displays ─────────────────────────
+const EK = 2.94e8, EP = -5.89e8, ET = EK + EP;  // J, 10 kg ball, circular orbit at 400 km
+const EW = 400, EH = 230;
+const eFrame = inner => `<svg viewBox="0 0 ${EW} ${EH}"><rect width="${EW}" height="${EH}" fill="${S.panel}"/>${inner}</svg>`;
+const fmtE = v => (v / 1e8).toFixed(2).replace('.', ',').replace('-', '−') + '·10⁸ J';
+const ENERGY = {
+  bars: () => {
+    const zx = 262, k = 118 / 6e8;
+    const row = (y, label, v, c) => `${txt(16, y + 15, label, { size: 13, w: 600, c })}<rect x="${v >= 0 ? zx : zx + v * k}" y="${y}" width="${Math.abs(v * k)}" height="22" rx="4" fill="${c}"/>
+      ${v >= 0 ? txt(zx + v * k + 6, y + 15, fmtE(v), { mono: true, size: 10.5, c: '#cbd5e1' })
+        : Math.abs(v * k) > 90 ? txt(zx + v * k + 6, y + 15, fmtE(v), { mono: true, size: 10.5, c: '#0b1020', w: 600 })
+        : txt(zx + 6, y + 15, fmtE(v), { mono: true, size: 10.5, c: '#cbd5e1' })}`;
+    return eFrame(`${txt(16, 28, 'ENERGIA', { size: 10, c: S.muted, ls: '.08em' })}
+      <line x1="${zx}" y1="40" x2="${zx}" y2="178" stroke="#e2e8f0" stroke-width="1.5"/>${txt(zx, 194, '0', { anchor: 'middle', mono: true, size: 11, c: S.muted })}
+      ${row(50, 'Eₖ  mozgási', EK, '#38bdf8')}${row(92, 'Eₚ  helyzeti', EP, '#a78bfa')}${row(134, 'E  teljes', ET, '#f59e0b')}
+      <rect x="16" y="202" width="368" height="20" rx="6" fill="rgba(245,158,11,.12)"/>${txt(24, 216, 'E < 0 → a golyó a bolygó körül marad', { size: 11.5, c: '#fbbf24' })}`);
+  },
+  columns: () => {
+    const zy = 112, k = 80 / 6e8;
+    const col = (x, label, v, c) => `<rect x="${x}" y="${v >= 0 ? zy - v * k : zy}" width="58" height="${Math.abs(v * k)}" rx="5" fill="${c}"/>
+      ${v >= 0 ? txt(x + 29, zy - v * k - 8, fmtE(v).replace(' J', ''), { anchor: 'middle', mono: true, size: 10, c: '#cbd5e1' })
+        : txt(x + 29, zy - v * k - 8, fmtE(v).replace(' J', ''), { anchor: 'middle', mono: true, size: 10, c: '#0b1020', w: 600 })}
+      ${txt(x + 29, 216, label, { anchor: 'middle', size: 13, w: 700, c })}`;
+    return eFrame(`${txt(16, 26, 'ENERGIA (J)', { size: 10, c: S.muted, ls: '.08em' })}
+      <rect x="40" y="${zy - 80}" width="330" height="80" fill="rgba(56,189,248,.04)"/><rect x="40" y="${zy}" width="330" height="80" fill="rgba(167,139,250,.05)"/>
+      ${txt(372, zy - 66, 'elszökik', { anchor: 'end', size: 10, c: '#64748b' })}${txt(372, zy + 74, 'kötött pálya', { anchor: 'end', size: 10, c: '#64748b' })}
+      <line x1="40" y1="${zy}" x2="370" y2="${zy}" stroke="#e2e8f0" stroke-width="1.5"/>${txt(32, zy + 4, '0', { anchor: 'end', mono: true, size: 11, c: S.muted })}
+      ${col(78, 'Eₖ', EK, '#38bdf8')}${txt(160, zy + 5, '+', { anchor: 'middle', size: 18, c: S.muted })}${col(184, 'Eₚ', EP, '#a78bfa')}${txt(266, zy + 5, '=', { anchor: 'middle', size: 18, c: S.muted })}${col(290, 'E', ET, '#f59e0b')}`);
+  },
+  gauge: () => {
+    const cx = 200, cy = 150, r = 105;
+    const ang = v => Math.PI * (1 - (v + 6e8) / 12e8);          // −6e8 … +6e8 → 180° … 0°
+    const pt = (v, rr) => [cx + rr * Math.cos(ang(v)), cy - rr * Math.sin(ang(v))];
+    const arc = (v0, v1, c, w) => { const [x0, y0] = pt(v0, r), [x1, y1] = pt(v1, r); return `<path d="M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}" fill="none" stroke="${c}" stroke-width="${w}"/>`; };
+    const [nx, ny] = pt(ET, r - 18);
+    return eFrame(`${txt(16, 26, 'TELJES ENERGIA  E = Eₖ + Eₚ', { size: 10, c: S.muted, ls: '.08em' })}
+      ${arc(-6e8, 0, '#a78bfa', 16)}${arc(0, 6e8, '#38bdf8', 16)}
+      <line x1="${cx}" y1="${cy - r - 14}" x2="${cx}" y2="${cy - r + 14}" stroke="#f8fafc" stroke-width="3"/>${txt(cx, cy - r - 20, '0', { anchor: 'middle', mono: true, size: 12, w: 600 })}
+      ${txt(cx - r - 4, cy + 20, 'kötött pálya', { anchor: 'middle', size: 11, c: '#c4b5fd' })}${txt(cx + r + 4, cy + 20, 'elszökik', { anchor: 'middle', size: 11, c: '#7dd3fc' })}
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="7" fill="#f59e0b"/>
+      ${txt(cx, cy + 40, 'E = ' + fmtE(ET), { anchor: 'middle', mono: true, size: 15, w: 600, c: '#fbbf24' })}
+      ${txt(cx, cy + 62, 'Eₖ = ' + fmtE(EK) + '   Eₚ = ' + fmtE(EP), { anchor: 'middle', mono: true, size: 10, c: S.muted })}`);
+  },
+};
+
+// ───────────────────────── build the page ─────────────────────────
+const OPTIONS = {
+  style: [
+    ['space', 'Mélyűr', 'Sötét űrháttér csillagokkal, világító pályák és nyilak. Látványos, sötétített teremben a legjobb.', () => appMock('space')],
+    ['paper', 'Tankönyv / tábla', 'Papírszerű háttér, rácsvonalak, vonalas ábra, dőlt betűs képletjelek, mint egy tankönyvi ábra. Világos teremben, nyomtatva is jól mutat.', () => appMock('paper')],
+    ['projector', 'Kivetítő, nagy kontraszt', 'Fekete-fehér alap, élénk sárga/türkiz, vastag vonalak, nagyon jól olvasható betűk (Atkinson Hyperlegible). A terem hátsó soraiból is olvasható.', () => appMock('projector')],
+  ],
+  panel: [
+    ['list', 'Jelenlegi lista', 'Minden beállítás egymás alatt, görgethető. Gyors és teljes, a tanárnak ideális.', PANELS.list],
+    ['cards', 'Kompakt kártyák', 'Négy nagy kártya a fő értékekkel; koppintásra nyílik a csúszka. Mobilon a legkényelmesebb, kevés görgetés.', PANELS.cards],
+    ['lesson', 'Lépésről lépésre', 'Végigvezet: bolygó → hegy → sebesség → lövés, minden lépésnél jósló kérdéssel. A teljes panel a „Haladó mód” alatt marad.', PANELS.lesson],
+  ],
+  arrows: [
+    ['glow', 'Vastag, világító nyilak', 'Erős színek fényudvarral, rövid jelölés (v, F) kapszulában. Távolról is feltűnő.', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'ag', { vectors: vectorsGlow })}</svg>`],
+    ['textbook', 'Tankönyvi, vékony nyilak', 'Vékony vonal, klasszikus nyílhegy, dőlt képletbetű (nyíllal jelölt v és F), szaggatott érintő. Pont úgy néz ki, mint a füzetben.', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'at', { vectors: vectorsTextbook })}</svg>`],
+    ['labels', 'Nagy feliratok értékkel', 'Közepes nyilak, mellettük nagy címke névvel és élő értékkel (v = 7,67 km/s, F = 86,9 N). A legtöbb információ egy pillantásra.', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'al', { vectors: vectorsLabels })}</svg>`],
+  ],
+  energy: [
+    ['bars', 'Vízszintes sávok nullvonallal', 'Eₖ jobbra (pozitív), Eₚ balra (negatív), alatta a teljes E. Számértékek a sávok végén.', ENERGY.bars],
+    ['columns', 'Függőleges oszlopok', 'Eₖ + Eₚ = E oszlopdiagram, fent az „elszökik”, lent a „kötött pálya” tartomány. Az összeadás szó szerint látszik.', ENERGY.columns],
+    ['gauge', 'Mutatós műszer', 'Egyetlen mutató a teljes energiára; a nulla felül van, balra kötött pálya, jobbra elszökés. A legegyszerűbb, de Eₖ és Eₚ csak számként látszik.', ENERGY.gauge],
+  ],
+  planet: [
+    ['globe', 'Stilizált földgömb', 'Óceán, kontinensek, felhők, fényes perem (a jelenlegi).', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'pg', { planet: planetGlobe })}</svg>`],
+    ['section', 'Keresztmetszet', 'A bolygó belseje: kéreg, köpeny, külső és belső mag, feliratokkal. Hangsúlyozza, hogy a gravitáció a középpont felé mutat.', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'ps', { planet: planetSection })}</svg>`],
+    ['flat', 'Egyszerű, sík korong', 'Egyszínű korong, vékony perem, szaggatott légkörvonal. Semmi sem vonja el a figyelmet a pályákról és a nyilakról.', () => `<svg viewBox="0 0 ${W} ${H}">${sceneSVG(S, 'pf', { planet: planetFlat })}</svg>`],
+  ],
+};
+const TITLES = { style: 'Összkép', panel: 'Panel', arrows: 'Nyilak', energy: 'Energia', planet: 'Bolygó' };
+let picks = {};
+try { picks = JSON.parse(localStorage.getItem('newton-picks') || '{}'); } catch {}
+
+for (const [sec, opts] of Object.entries(OPTIONS)) {
+  const grid = document.querySelector(`#${sec} .grid`);
+  opts.forEach(([key, name, desc, render], i) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.dataset.key = key;
+    b.setAttribute('aria-pressed', String(picks[sec] === key));
+    b.innerHTML = `${render()}<div class="cap"><b><span class="tag">${'ABC'[i]}</span>${name}</b><span>${desc}</span></div>`;
+    b.onclick = () => {
+      picks[sec] = key;
+      grid.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.key === key)));
+      try { localStorage.setItem('newton-picks', JSON.stringify(picks)); } catch {}
+      summary();
+    };
+    grid.appendChild(b);
+  });
+}
+function summary() {
+  const parts = Object.keys(OPTIONS).map(sec => {
+    const i = OPTIONS[sec].findIndex(o => o[0] === picks[sec]);
+    return `${TITLES[sec]}: <em>${i < 0 ? '–' : 'ABC'[i] + ' ' + OPTIONS[sec][i][1]}</em>`;
+  });
+  document.getElementById('summary').innerHTML = parts.join(' · ');
+}
+summary();
+</script>
+</body>
+</html>
