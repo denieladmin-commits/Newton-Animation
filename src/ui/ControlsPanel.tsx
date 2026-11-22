@@ -29,6 +29,8 @@ export const maxLaunchSpeed = (p: LaunchParams) =>
   Math.ceil((1.3 * escapeSpeed(BODIES[p.bodyId], BODIES[p.bodyId].radius + p.altitude)) / 500) * 500;
 
 interface Props {
+  /** Energy bars, rendered between the drag and vector sections. */
+  energy: React.ReactNode;
   params: LaunchParams;
   snap: SpeedSnap;
   warp: Warp;
@@ -175,6 +177,10 @@ export function ControlsPanel(props: Props) {
           </button>
         </div>
         <p className="text-sm text-(--muted)">{body.atmosphere ? t.dragNote : t.dragNoAtmosphere}</p>
+      </Section>
+
+      <Section title={t.energy} aside={<span className="text-sm text-(--muted)">{t.energyBall}</span>}>
+        {props.energy}
       </Section>
 
       <Section title={t.vectors}>

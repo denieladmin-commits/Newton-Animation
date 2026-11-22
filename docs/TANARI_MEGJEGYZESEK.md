@@ -122,3 +122,23 @@ Van, és nem is sokkal kisebb: 400 km magasan a 10 kg-os golyóra 86,9 N hat, a 
 
 **29. Miért van két megjelenés (Valósághű és Tábla)?**
 A fizika mindkettőben ugyanaz, csak a rajz más. A Valósághű a látványosabb, sötétített teremben ajánlott. A Tábla krétarajzra hasonlít, Newton 1728-as rézmetszetének vonalkázásával; világos teremben, kivetítőn is jól olvasható. A váltó a kép jobb felső sarkában van (telefonon a Vezérlés fül alján), a T billentyű is vált.
+
+## Energia, képletek, grafikonok
+
+**30. Miért változik E_k és E_p, de E nem?**
+Légellenállás nélkül csak a gravitáció végez munkát, és az konzervatív erő: amennyit a golyó mozgási energiája nő, annyit csökken a helyzeti energiája, és fordítva. Ellipszispályán ez jól látszik a Grafikonok fülön: távolodáskor E_k csökken, E_p nő (kevésbé negatív), a teljes E vonala pedig vízszintes. Ellenőrizve: 10 keringés alatt E relatív változása 10⁻¹³ nagyságrendű.
+
+**31. Mit jelent a szürke „hővé alakult” (W) sáv?**
+Légellenállással a közegellenállási erő munkája a golyó mozgási energiáját hővé alakítja, ezért a teljes energia csökken. A W sáv pontosan ezt a munkát mutatja: E + W mindig a kilövéskori teljes energiával egyenlő (ellenőrizve 10⁻⁶ pontossággal).
+
+**32. Milyen skálán vannak az energiasávok?**
+Egy lövés alatt a skála rögzített, így a sávok hossza közvetlenül összevethető. A skálát úgy választjuk, hogy a lehető legnagyobb érték is elférjen: a felszínen mért E_p, illetve a becsapódáskor elérhető legnagyobb E_k. A pontos értékek a sávok mellett olvashatók (pl. −5,89·10⁸ J).
+
+**33. Miért ilyen nagyok az energiák?**
+A 10 kg-os golyó 7,67 km/s-mal kb. 2,94·10⁸ J mozgási energiájú, ez kb. 70 kg TNT robbanási energiájának felel meg (1 kg TNT ≈ 4,2·10⁶ J). Ezért kell olyan sok üzemanyag ahhoz, hogy bármit pályára állítsunk.
+
+**34. A Képletek fülön kerekített számok szerepelnek. Melyik a pontos?**
+A program mindig a teljes pontossággal számol, a képernyőn 3–4 értékes jegyre kerekítve jelenik meg. Például v₁ = 7,67 km/s a 400 km-es magasságon; a képletbe írt kerekített értékekből visszaszámolva ugyanez jön ki.
+
+**35. A grafikonokon miért csak az aktuális lövés látszik?**
+Hogy az időtengely egyértelmű legyen. Egy új lövéssel a grafikon újraindul; a korábbi lövések pályája a képen továbbra is látszik (A, B, C…). A Táblázat gomb a grafikon adatait számokkal is megmutatja.

@@ -50,3 +50,6 @@ in the browser and show them in Hungarian.*
 | 23 | Arrow lengths: v⃗ ∝ speed (90 px at v₁), F⃗ ∝ 1/r² (72 px at launch) | proportional | 10⁻⁹ |
 | 24 | Drawn components v_r + v_t add up to v⃗ (in pixels) | exact | 10⁻⁹ |
 | 25 | Force readout: 10 kg ball at 0 / 8,85 / 400 km | 98,2 / 97,9 / 86,9 N | 0,05 N |
+| 26 | Energy bars never exceed their fixed scale (60 random launches, all planets, drag on/off) | — | property test |
+| 27 | 10 kg ball, circular orbit at 400 km | E_k = 2,94·10⁸ J, E_p = −5,89·10⁸ J, E = −E_k | 3 significant figures |
+| 28 | Graph samples: at most 2048 points, evenly thinned, first point kept | — | unit test |

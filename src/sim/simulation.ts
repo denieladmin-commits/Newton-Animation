@@ -3,10 +3,30 @@ import {
   advanceFlight,
   createFlight,
   launchState,
+  DEFAULT_PROJECTILE,
   type Flight,
   type FlightEvent,
+  type State,
 } from '../physics/orbitalPhysics';
+import { SampleBuffer, type SeriesKey } from './samples';
 import { Trail } from './trail';
+
+/** Mass of the cannonball used for forces and energies in joules (kg). */
+export const BALL_MASS = DEFAULT_PROJECTILE.mass;
+
+/** Energies of the ball in joules: kinetic, potential (zero at infinity), and lost to drag. */
+export function energies(s: State, body: Body) {
+  const m = BALL_MASS;
+  const r = Math.hypot(s.x, s.y);
+  const ek = 0.5 * m * (s.vx * s.vx + s.vy * s.vy);
+  const ep = (-body.GM * m) / r;
+  return { ek, ep, e: ek + ep, loss: -m * s.w };
+}
+
+function sampleOf(s: State, body: Body): Record<SeriesKey, number> {
+  const { ek, ep, loss } = energies(s, body);
+  return { t: s.t, h: Math.hypot(s.x, s.y) - body.radius, v: Math.hypot(s.vx, s.vy), ek, ep, loss };
+}
 
 export const WARP_PRESETS = [1, 10, 100, 500, 2000] as const;
 export type Warp = (typeof WARP_PRESETS)[number];
@@ -25,6 +45,7 @@ export interface Shot {
   flight: Flight;
   trail: Trail;
   params: LaunchParams;
+  samples: SampleBuffer;
 }
 
 const MAX_GHOSTS = 8;
@@ -78,11 +99,14 @@ export class Simulation {
     });
     const trail = new Trail();
     trail.reset(flight.state);
+    const samples = new SampleBuffer();
+    samples.offer(sampleOf(flight.state, this.body), true);
     this.current = {
       label: LABELS[this.shotCount % LABELS.length]!,
       flight,
       trail,
       params: { ...this.params },
+      samples,
     };
     this.shotCount++;
     this.lastEvents = [];
@@ -104,7 +128,13 @@ export class Simulation {
     const shot = this.current;
     if (!this.running || !shot || shot.flight.status !== 'flying') return [];
     const dt = Math.min(realDt, 0.05) * this.warp;
-    const events = advanceFlight(shot.flight, dt, (s) => shot.trail.add(s));
+    const body = shot.flight.env.body;
+    const events = advanceFlight(shot.flight, dt, (s) => {
+      shot.trail.add(s);
+      shot.samples.offer(sampleOf(s, body));
+    });
+    // Always keep the final point (impact or escape) in the graphs.
+    if (shot.flight.status !== 'flying') shot.samples.offer(sampleOf(shot.flight.state, body), true);
     if (events.length) {
       this.lastEvents = [...this.lastEvents, ...events].slice(-5);
       if (shot.flight.status !== 'flying') this.running = false;

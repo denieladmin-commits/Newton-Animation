@@ -23,6 +23,12 @@
   --overlay-ink: #e8e4d8;
   --overlay-muted: #a9b3c2;
   --overlay-line: #2a3a52;
+  /* chart series (validated: dataviz validate_palette, dark mode, surface #0f1b2e) */
+  --s-ek: #3987e5;
+  --s-ep: #d55181;
+  --s-e: #c98500;
+  --s-loss: #8b93a3;
+  --grid: rgba(232, 228, 216, 0.1);
   --font-ui: 'Instrument Sans', system-ui, sans-serif;
   --font-math: 'Newsreader', 'Times New Roman', serif;
 }
@@ -45,6 +51,12 @@
   --overlay-ink: #eeede5;
   --overlay-muted: #c8cbbf;
   --overlay-line: rgba(238, 237, 229, 0.45);
+  /* chart series (validated, light mode, surface #f2f1ec; direct labels required) */
+  --s-ek: #2a78d6;
+  --s-ep: #c2457a;
+  --s-e: #a86a00;
+  --s-loss: #7b7f78;
+  --grid: rgba(31, 42, 36, 0.1);
 }
 
 html, body, #root { height: 100%; }

@@ -4,7 +4,10 @@ import { DEFAULT_PROJECTILE, radius, speed } from './physics/orbitalPhysics';
 import { Camera } from './render/camera';
 import type { SceneLabels, SceneOptions } from './render/scene';
 import { THEMES, type ThemeId } from './theme/themes';
-import { Simulation, WARP_PRESETS, type LaunchParams, type Warp } from './sim/simulation';
+import { energies, Simulation, WARP_PRESETS, type LaunchParams, type Warp } from './sim/simulation';
+import { EnergyBars, energyScale } from './ui/EnergyBars';
+import { FormulasPanel } from './ui/FormulasPanel';
+import { GraphsPanel } from './ui/GraphsPanel';
 import { fmt, fmtDistance, fmtDuration, type Lang } from './i18n/format';
 import { LangContext } from './i18n';
 import { STRINGS } from './i18n/strings';
@@ -26,23 +29,42 @@ interface Telemetry {
   period: number | null;
   /** Gravitational force on the ball (N). */
   force: number;
+  /** Distance from the planet's centre (m). */
+  r: number;
+  ek: number;
+  ep: number;
+  loss: number;
+  /** Energy bar scale for this shot (J). */
+  scale: number;
 }
 
 function readTelemetry(sim: Simulation): Telemetry {
   const shot = sim.current;
   const forceAt = (r: number) => (sim.body.GM * DEFAULT_PROJECTILE.mass) / (r * r);
-  if (!shot)
+  const p = shot ? shot.params : sim.params;
+  const r0 = sim.body.radius + p.altitude;
+  const scale = energyScale(sim.body, r0, p.v0);
+  if (!shot) {
+    const lp = { ...sim.launchPoint, vx: sim.params.v0 };
+    const en = energies(lp, sim.body);
     return {
       t: 0,
       altitude: sim.params.altitude,
-      speed: 0,
+      speed: sim.params.v0,
       status: 'idle',
       range: 0,
       orbits: 0,
       period: null,
-      force: forceAt(sim.body.radius + sim.params.altitude),
+      force: forceAt(r0),
+      r: r0,
+      ek: en.ek,
+      ep: en.ep,
+      loss: 0,
+      scale,
     };
+  }
   const s = shot.flight.state;
+  const en = energies(s, sim.body);
   return {
     t: s.t,
     altitude: radius(s) - sim.body.radius,
@@ -52,6 +74,11 @@ function readTelemetry(sim: Simulation): Telemetry {
     orbits: shot.flight.orbitsCompleted,
     period: shot.flight.measuredPeriod,
     force: forceAt(radius(s)),
+    r: radius(s),
+    ek: en.ek,
+    ep: en.ep,
+    loss: en.loss,
+    scale,
   };
 }
 
@@ -346,6 +373,15 @@ export default function App() {
           <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:px-6 lg:py-5">
             {tab === 'controls' ? (
               <ControlsPanel
+                energy={
+                  <EnergyBars
+                    ek={tele.ek}
+                    ep={tele.ep}
+                    loss={tele.loss}
+                    drag={(tele.status === 'idle' ? params.drag : (sim.current?.params.drag ?? false)) && !!sim.body.atmosphere}
+                    scale={tele.scale}
+                  />
+                }
                 params={params}
                 snap={snap}
                 warp={warp}
@@ -363,6 +399,17 @@ export default function App() {
                 onTogglePlay={togglePlay}
                 onClear={clear}
               />
+            ) : tab === 'formulas' ? (
+              <FormulasPanel
+                body={sim.body}
+                r0={sim.body.radius + (sim.current?.params.altitude ?? params.altitude)}
+                altitude={sim.current?.params.altitude ?? params.altitude}
+                r={tele.r}
+                v={tele.speed}
+                themeId={themeId}
+              />
+            ) : tab === 'graphs' ? (
+              <GraphsPanel sim={sim} themeId={themeId} />
             ) : (
               <p className="text-sm text-(--muted)">{t.comingSoon}</p>
             )}
