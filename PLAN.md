@@ -180,6 +180,7 @@ src/
 - **Limitations, stated openly:** 2D, point mass, non-rotating planet, spherical planet, simple exponential atmosphere with a constant drag coefficient, no heating or burn-up, no Moon or Sun pulling on the ball. For each one, a sentence on why it doesn't change the lesson.
 - **Printable report:** a print button lays it out as an A4 report (date, app version, all results), so the teacher can file it or show it to colleagues.
 - `docs/VALIDATION.md` in the repo holds the same content with references, for anyone reviewing the source code.
+- **Teacher's notes (`docs/TANARI_MEGJEGYZESEK.md`, Hungarian):** every question a teacher or student might ask, such as why g is 9,82 and not 9,81, why E_p is negative, or why the mountain is invisible at full view. It grows with every milestone and is shown in the app on the *A modellről* and *Ellenőrzés* pages.
 
 ## 9. Symbol glossary (*Jelölések*)
 
