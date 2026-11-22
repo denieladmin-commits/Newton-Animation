@@ -23,7 +23,7 @@ The spec is solid. These are the problems I found and how the plan fixes them:
 | 10 | **500x is too slow for wide ellipses.** As v₀ approaches v₂, the period grows without limit. | Warp presets **1x / 10x / 100x / 500x / 2000x**, with `1–5` keys. Escape runs stop after a distance limit and show a "left the system" badge. |
 | 11 | **Single-file build vs. KaTeX fonts.** `vite-plugin-singlefile` inlines JS and CSS, but KaTeX's CSS points to separate `.woff2` font files, so formulas break offline. | Set `build.assetsInlineLimit` very high so the fonts inline as base64 (about +300 KB). Use only woff2 fonts. Load no web fonts; use the system font stack. Set `base: './'` for GitHub Pages. |
 | 12 | **RK4 energy drift.** The energy bar exposes tiny integrator errors over many orbits. | Fixed substep RK4 (dt ≤ 1 s sim time, adaptive near periapsis), many substeps per frame at high warp. A unit test caps drift at 10⁻⁶ per orbit. |
-| 13 | **Hungarian conventions.** | Decimal comma (`7,91 km/s`) and a thin-space thousands separator in HU. HU textbooks often write the gravitational constant as **γ** (or *f*) instead of G, so this is switchable. Show both *második kozmikus sebesség* and *szökési sebesség*. |
+| 13 | **Notation follows the Romanian curriculum (taught in Hungarian).** The class learns from Hungarian-language editions of Romanian textbooks, so symbols from Hungary's books (γ, *f*) don't match. | Hungarian wording, Romanian notation: gravitational constant **K** (Romanian books use **G** for weight, *greutate*, so G would clash), **v_I / v_II** for the first and second cosmic speeds, and **E_c** for kinetic energy (*energie cinetică*) beside E_p. Decimal comma (`7,91 km/s`). All symbols live in one notation table (`src/i18n/notation.ts`) so they can be fixed against the class textbook in one place. EN uses international notation (G, v₁, v₂, E_k). |
 
 ### Suggested additions (high value, low cost)
 - **Newton's fan of shots:** previous shots stay as faded ghost trails with labels A, B, C, D… This recreates the classic diagram and lets students compare speeds side by side.
@@ -66,6 +66,7 @@ src/
     ZoomButtons.tsx
   i18n/
     en.ts  hu.ts  index.ts   # typed dictionary, number formatting per locale
+    notation.ts              # per-language physics symbols (HU = Romanian curriculum)
   App.tsx  main.tsx  index.css
 ```
 
@@ -98,7 +99,7 @@ src/
 
 ## 4. EdTech features
 
-- **Formula drawer:** a step-by-step derivation F_g = F_cp → γMm/r² = mv²/r (both m's highlighted and struck through) → v₁ = √(γM/r). Then v₂ = √(2γM/r) and ε = v²/2 − γM/r, each with live substituted numbers ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
+- **Formula drawer:** a step-by-step derivation F_g = F_cp → K·Mm/r² = mv²/r (both m's highlighted and struck through) → v_I = √(KM/r). Then v_II = √(2KM/r) and ε = v²/2 − KM/r (shown with G, v₁, v₂ in EN), each with live substituted numbers ("= √(3.986·10¹⁴ / 6.38·10⁶) = 7.90 km/s").
 - **Energy bar** as described in §0.2 and §0.3.
 - **Felfedező mód (4 challenges)**, each with a goal, a "set it up for me" button, a guiding question, and a success check:
   1. *Sub-orbital crash:* fire at 3 km/s and predict where it lands. Shows the range readout.
@@ -130,6 +131,6 @@ src/
 
 ## 7. Decisions (confirmed)
 1. Default language: **Hungarian** (EN one click away).
-2. Gravitational constant: **γ in HU, G in EN**.
+2. Notation: **Romanian-curriculum symbols with Hungarian wording** (K, v_I/v_II, E_c, E_p) in HU; international symbols in EN. *Still to confirm against the class textbook: the planet mass/radius subscripts, the symbol for weight vs. gravitational force, and whether E_c or E_k is used.*
 3. Launch: **horizontal only**, true to Newton.
 4. Deploy: **GitHub Pages via GitHub Actions**, plus the standalone `dist/index.html`.
