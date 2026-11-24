@@ -28,7 +28,7 @@ function sampleOf(s: State, body: Body): Record<SeriesKey, number> {
   return { t: s.t, h: Math.hypot(s.x, s.y) - body.radius, v: Math.hypot(s.vx, s.vy), ek, ep, loss };
 }
 
-export const WARP_PRESETS = [1, 10, 100, 500, 2000] as const;
+export const WARP_PRESETS = [1, 100, 500] as const;
 export type Warp = (typeof WARP_PRESETS)[number];
 
 export interface LaunchParams {

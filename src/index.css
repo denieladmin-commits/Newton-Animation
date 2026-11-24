@@ -79,3 +79,14 @@ input[type='range'] { accent-color: var(--control); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Printing: only the verification page, black on white, no buttons. */
+@media print {
+  @page { size: A4; margin: 15mm; }
+  body * { visibility: hidden; }
+  .verify-page, .verify-page * { visibility: visible; }
+  .verify-page { position: absolute; inset: 0 auto auto 0; width: 100%; overflow: visible; background: #fff; color: #000; }
+  .verify-page .no-print { display: none !important; }
+  .verify-page .check { break-inside: avoid; border-color: #999; }
+  .verify-page [class*='text-(--muted)'] { color: #333; }
+}

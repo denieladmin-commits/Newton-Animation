@@ -251,3 +251,12 @@ Shared in both themes (chosen in round 1):
 - **Energy:** horizontal signed bars with a zero line: E_k, E_p, E, with values and the sentence "E < 0, ezért a golyó a bolygó körül marad."
 - **Figure caption** under the canvas ("1. ábra. …"), and italic serif letters A, B, C for earlier shots.
 - Fonts are embedded in the single offline file (woff2, Latin + Latin Extended subsets for ő, ű).
+
+## 11. Simplification (after classroom review)
+
+The app felt over-engineered, so it was cut back. This section overrides the earlier ones where they differ:
+- **Felfedező mód removed** (tab, lessons, quick controls, tests, notes 36–38, validation rows 29–32).
+- **Two tabs: Vezérlés | Fizika.** Fizika = live derivation, one energy-over-time chart (E_k, E_p, E, W with drag), the glossary of on-screen symbols, and the link to the Ellenőrzés page. The height and speed charts and the table view are gone.
+- **Main panel:** Tűz!, play/pause, speed (1×, 100×, 500×; keys 1–3), mountain height with presets, launch speed with v₁/v₂ (±100 m/s), energy bars, Clear shots. A collapsed **Haladó** section holds the planet choice (Moon, Mars), air drag, vector options and, on phones, the style switch.
+- **Glossary in the app** lists only symbols that appear on screen; the full list is in docs/TANARI_MEGJEGYZESEK.md.
+- **Ellenőrzés page (M8b):** eight live checks with one "Futtatás" button; printed with the browser's normal print and a print stylesheet. The full test suite and docs/VALIDATION.md remain the complete record.

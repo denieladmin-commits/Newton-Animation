@@ -95,8 +95,8 @@ Ekkor a gravitáció nem elég ahhoz, hogy körpályán tartsa a golyót, ezért
 **20. Mi történik pontosan v₂-nél?**
 A pálya parabola, a golyó soha nem tér vissza. v₂ felett hiperbola. Az alkalmazás akkor jelzi az elszökést, amikor a golyó a bolygó sugarának 30-szorosánál messzebb van, és az összenergiája nem negatív.
 
-**21. A gyorsítás (10x, 100x …) megváltoztatja a fizikát?**
-Nem. A gyorsítás csak azt szabja meg, hogy a valós idő egy másodperce alatt mennyi szimulált idő telik el. A számítás lépésköze a pálya alakjához igazodik, nem a gyorsításhoz, ezért minden sebességen ugyanazt a pályát kapjuk. 1x sebességen a szimuláció valós idejű.
+**21. A gyorsítás (100×, 500×) megváltoztatja a fizikát?**
+Nem. A gyorsítás csak azt szabja meg, hogy a valós idő egy másodperce alatt mennyi szimulált idő telik el. A számítás lépésköze a pálya alakjához igazodik, nem a gyorsításhoz, ezért minden sebességen ugyanazt a pályát kapjuk. 1× sebességen a szimuláció valós idejű.
 
 ## Pontosság
 
@@ -132,7 +132,7 @@ Igen, minden képkockában. A sebességnyíl hossza a sebességgel arányos, az 
 ## Energia, képletek, grafikonok
 
 **30. Miért változik E_k és E_p, de E nem?**
-Légellenállás nélkül csak a gravitáció végez munkát, és az konzervatív erő: amennyit a golyó mozgási energiája nő, annyit csökken a helyzeti energiája, és fordítva. Ellipszispályán ez jól látszik a Grafikonok fülön: távolodáskor E_k csökken, E_p nő (kevésbé negatív), a teljes E vonala pedig vízszintes. Ellenőrizve: 10 keringés alatt E relatív változása 10⁻¹³ nagyságrendű.
+Légellenállás nélkül csak a gravitáció végez munkát, és az konzervatív erő: amennyit a golyó mozgási energiája nő, annyit csökken a helyzeti energiája, és fordítva. Ellipszispályán ez jól látszik a Fizika fül energiagrafikonján: távolodáskor E_k csökken, E_p nő (kevésbé negatív), a teljes E vonala pedig vízszintes. Ellenőrizve: 10 keringés alatt E relatív változása 10⁻¹³ nagyságrendű.
 
 **31. Mit jelent a szürke „hővé alakult” (W) sáv?**
 Légellenállással a közegellenállási erő munkája a golyó mozgási energiáját hővé alakítja, ezért a teljes energia csökken. A W sáv pontosan ezt a munkát mutatja: E + W mindig a kilövéskori teljes energiával egyenlő (ellenőrizve 10⁻⁶ pontossággal).
@@ -143,25 +143,16 @@ Egy lövés alatt a skála rögzített, így a sávok hossza közvetlenül össz
 **33. Miért ilyen nagyok az energiák?**
 A 10 kg-os golyó 7,67 km/s-mal kb. 2,94·10⁸ J mozgási energiájú, ez kb. 70 kg TNT robbanási energiájának felel meg (1 kg TNT ≈ 4,2·10⁶ J). Ezért kell olyan sok üzemanyag ahhoz, hogy bármit pályára állítsunk.
 
-**34. A Képletek fülön kerekített számok szerepelnek. Melyik a pontos?**
+**34. A Fizika fülön kerekített számok szerepelnek. Melyik a pontos?**
 A program mindig a teljes pontossággal számol, a képernyőn 3–4 értékes jegyre kerekítve jelenik meg. Például v₁ = 7,67 km/s a 400 km-es magasságon; a képletbe írt kerekített értékekből visszaszámolva ugyanez jön ki.
 
-**35. A grafikonokon miért csak az aktuális lövés látszik?**
-Hogy az időtengely egyértelmű legyen. Egy új lövéssel a grafikon újraindul; a korábbi lövések pályája a képen továbbra is látszik (A, B, C…). A Táblázat gomb a grafikon adatait számokkal is megmutatja.
+**35. Az energiagrafikonon miért csak az aktuális lövés látszik?**
+Hogy az időtengely egyértelmű legyen. Egy új lövéssel a grafikon újraindul; a korábbi lövések pályája a képen továbbra is látszik (A, B, C…).
 
-## Felfedező mód és jelölések
+## Jelölések
 
-**36. Hogyan „tudja” az alkalmazás, hogy egy feladat teljesült?**
-A feladatokat a szimuláció adataiból ellenőrzi, nem a diák válaszából: 1. legalább 5000 km-es lőtávolság; 2. v₁-gyel indított lövés, amely legalább 1 s-ig repült; 3. egy teljes kör olyan pályán, amelynek excentricitása 0,01 alatt van; 4. a golyó elszökött. A jóslókérdés csak gondolkodtat, a feladat teljesítését nem befolyásolja. Mindhárom ellenőrzés automatikus teszttel is igazolva van.
-
-**37. A 2. feladat ábráján miért fedi egymást a két görbe?**
-Mert a golyó esése (½·g·t²) és a felszín görbülete (d²/2R) az első másodpercben valóban ugyanannyi, 4,90 m – ez Newton gondolatának lényege. Az ábra függőlegesen kb. 460-szorosan nagyít, különben az 5 m 8 km mellett nem látszana; a két érték a szimulációból számolódik.
-
-**38. Hol tárolódik a diákok haladása?**
-Csak az adott böngészőben (a gépen). Nem kerül fel internetre, és a „Haladás törlése” gombbal bármikor újrakezdhető – például óra elején, ha több osztály ugyanazt a gépet használja.
-
-**39. Mi történik, ha egy jelölésre kattintunk a Képletek fülön?**
-Megjelenik a jel neve, rövid magyarázata, mértékegysége és egy jellemző értéke. Ugyanez a lista a Képletek fül alján is megtalálható (Jelölések). Minden jel egyetlen fájlban van megadva (src/i18n/notation.ts), így ha a füzetben más a jelölés (például a_cp helyett a_c), egyetlen sor átírásával mindenhol megváltozik.
+**39. Mi történik, ha egy jelölésre kattintunk a Fizika fülön?**
+Megjelenik a jel neve, rövid magyarázata, mértékegysége és egy jellemző értéke. A képernyőn előforduló jelek listája a Fizika fülön is megtalálható (Jelölések); a teljes lista, a g-vel és a_cp-vel együtt, ennek a dokumentumnak a végén van. Minden jel egyetlen fájlban van megadva (src/i18n/notation.ts), így ha a füzetben más a jelölés (például a_cp helyett a_c), egyetlen sor átírásával mindenhol megváltozik.
 
 ## Órai használat
 
@@ -173,3 +164,36 @@ Ha két becsapódási pont nagyon közel van egymáshoz (például az Everestrő
 
 **42. Működik telefonon és táblagépen?**
 Igen. Állítva a kép felül, a kezelőpanel alul van; elfordítva a kettő egymás mellé kerül. A kép két ujjal nagyítható, egy ujjal mozgatható.
+
+**43. Hol vannak a légellenállás, a Hold és a Mars?**
+A kezelőpanel alján, a „Haladó” részben (alapból becsukva). Ott kapcsolható a légellenállás, a sebesség összetevőinek (v_r, v_t) megjelenítése és a többi égitest. Légellenállással a fékezőerő nyila (F⃗_d) magától megjelenik.
+
+**44. Hogyan mutatom meg, hogy a szimuláció pontos?**
+A Fizika fül alján az „Ellenőrzés” gomb (vagy a cím után írt #ellenorzes) megnyit egy oldalt, amely a „Futtatás” gombra nyolc ellenőrzést futtat le élőben, a böngészőben: v₁ = 7,91 km/s, 4,9 m esés az első másodpercben, az ISS keringési ideje (92,4 perc), v₂ = √2·v₁, energiamegmaradás 10 keringés alatt, a becsapódás helye a Kepler-pályához képest, a gravitációs erő iránya és a levegő sűrűsége a nemzetközi referencia-légkörhöz képest. Minden sornál látszik a mért és a várt érték és a forrás. A „Nyomtatás” gomb a böngésző szokásos nyomtatását indítja, és csak ezt az oldalt nyomtatja ki.
+
+## A teljes jelöléslista
+
+| Jel | Név | Mértékegység | Jellemző érték |
+|---|---|---|---|
+| G | Gravitációs állandó | N·m²/kg² | 6,674·10⁻¹¹ |
+| F | Gravitációs erő (piros nyíl) | N | 10 kg-os golyóra: 98,2 N a felszínen, 86,9 N 400 km-en |
+| F_d | Légellenállási erő | N | Everestről v₁-gyel: ≈ 192 000 N |
+| M | A bolygó tömege | kg | Föld: 5,97·10²⁴ kg |
+| R | A bolygó sugara | km | Föld 6371; Hold 1737; Mars 3390 |
+| h | A hegy magassága | km | Everest 8,85; ISS 400 |
+| r | Középponttól mért távolság, r = R + h | km | ISS: ≈ 6771 km |
+| m | A golyó tömege | kg | 10 kg |
+| v₀ | Kezdősebesség | km/s | 0–14 |
+| v | Pillanatnyi sebesség (kék nyíl) | km/s | — |
+| v_r, v_t | Radiális és tangenciális sebesség | km/s | körpályán v_r = 0, v_t = v₁ |
+| v₁ | Első kozmikus sebesség, √(GM/r) | km/s | Föld felszínén 7,91 |
+| v₂ | Második kozmikus (szökési) sebesség, √2·v₁ | km/s | Föld felszínén 11,19 |
+| E_k | Mozgási energia, ½mv² | J | 10 kg, 7,67 km/s: 2,94·10⁸ |
+| E_p | Helyzeti energia, −G·Mm/r | J | 10 kg a felszínen: −6,26·10⁸ |
+| E | Teljes energia, E_k + E_p | J | körpályán E = −E_k |
+| W | Hővé alakult energia (légellenállás munkája) | J | légellenállás nélkül 0 |
+| F_cp | Centripetális erő, mv²/r | N | körpályán F_cp = F |
+| a_cp | Centripetális gyorsulás, v²/r | m/s² | körpályán = g(r) |
+| g | Nehézségi gyorsulás, GM/R² | m/s² | Föld 9,82 (nem forgó modell); Hold 1,62; Mars 3,73 |
+| T | Keringési idő | perc | ISS: 92,4 |
+| ε | Fajlagos energia, E/m | J/kg | körpályán 400 km-en: −2,94·10⁷ |

@@ -1,7 +1,6 @@
 /**
- * Graphs tab: altitude, speed and energies against time for the current shot.
- * Three charts (never a dual axis), a shared hover crosshair with a tooltip,
- * a legend plus direct labels for the energy chart, and a table view.
+ * Energy against time for the current shot: one chart with a hover crosshair,
+ * a legend plus direct labels.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fmt, fmtSci, sciParts, type Lang } from '../i18n/format';
@@ -283,12 +282,12 @@ interface Props {
   themeId: ThemeId;
 }
 
-export function GraphsPanel({ sim, themeId }: Props) {
+/** Energy over time for the current shot: E_k, E_p, E (and W with air drag). */
+export function EnergyChart({ sim, themeId }: Props) {
   const t = useT();
   const lang = useLang();
   const [version, setVersion] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
-  const [table, setTable] = useState(false);
   const shot = sim.current;
   const buf = shot?.samples;
 
@@ -306,97 +305,40 @@ export function GraphsPanel({ sim, themeId }: Props) {
   }, [sim]);
 
   const drag = !!shot?.params.drag && !!sim.body.atmosphere;
-  const charts: ChartDef[] = useMemo(
-    () => [
-      { id: 'h', title: t.gHeight, unit: 'km', div: 1000, series: [{ key: 'h', label: 'h', color: '--s-ek', value: (b, i) => b.data.h[i]! }] },
-      { id: 'v', title: t.gSpeed, unit: 'km/s', div: 1000, series: [{ key: 'v', label: 'v', color: '--s-ek', value: (b, i) => b.data.v[i]! }] },
-      {
-        id: 'e',
-        title: t.gEnergy,
-        unit: 'J',
-        sci: true,
-        series: [
-          { key: 'ek', label: 'E', sub: 'k', color: '--s-ek', value: (b, i) => b.data.ek[i]! },
-          { key: 'ep', label: 'E', sub: 'p', color: '--s-ep', value: (b, i) => b.data.ep[i]! },
-          { key: 'e', label: 'E', color: '--s-e', value: (b, i) => b.data.ek[i]! + b.data.ep[i]! },
-          ...(drag ? [{ key: 'loss', label: 'W', color: '--s-loss', value: (b: SampleBuffer, i: number) => b.data.loss[i]! }] : []),
-        ],
-      },
-    ],
+  const def: ChartDef = useMemo(
+    () => ({
+      id: 'e',
+      title: t.gEnergy,
+      unit: 'J',
+      sci: true,
+      series: [
+        { key: 'ek', label: 'E', sub: 'k', color: '--s-ek', value: (b, i) => b.data.ek[i]! },
+        { key: 'ep', label: 'E', sub: 'p', color: '--s-ep', value: (b, i) => b.data.ep[i]! },
+        { key: 'e', label: 'E', color: '--s-e', value: (b, i) => b.data.ek[i]! + b.data.ep[i]! },
+        ...(drag ? [{ key: 'loss', label: 'W', color: '--s-loss', value: (b: SampleBuffer, i: number) => b.data.loss[i]! }] : []),
+      ],
+    }),
     [t, drag],
   );
 
   if (!buf || buf.length < 2) return <p className="text-[15px] text-(--muted)">{t.gEmpty}</p>;
 
   const n = buf.length;
-  const tMax = buf.data.t[n - 1]!;
-  const tu = timeUnit(tMax, lang);
-  const timeLabel = `${t.gTime} ({u})`;
+  const tu = timeUnit(buf.data.t[n - 1]!, lang);
   const hi = hover !== null && hover < n ? hover : null;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        {/* Tooltip readout for the hovered moment (shared by all charts). */}
-        <p className="min-h-6 text-sm tabular-nums" aria-live="polite">
-          {hi !== null && (
-            <>
-              t = {fmt(buf.data.t[hi]! / tu.div, lang, 1)} {tu.label}&ensp; h = {fmt(buf.data.h[hi]! / 1000, lang, 1)} km&ensp; v ={' '}
-              {fmt(buf.data.v[hi]! / 1000, lang, 3)} km/s&ensp; E = {fmtSci(buf.data.ek[hi]! + buf.data.ep[hi]!, lang)} J
-            </>
-          )}
-        </p>
-        <button
-          className="min-h-11 shrink-0 rounded-lg border border-(--line) px-3 text-sm hover:text-(--ink)"
-          aria-pressed={table}
-          onClick={() => setTable((x) => !x)}
-        >
-          {table ? t.gChart : t.gTable}
-        </button>
-      </div>
-
-      {table ? (
-        <DataTable buf={buf} lang={lang} />
-      ) : (
-        charts.map((def) => (
-          <Chart key={def.id} def={def} buf={buf} version={version} hover={hi} onHover={setHover} lang={lang} themeId={themeId} timeLabel={timeLabel} />
-        ))
-      )}
+    <div className="space-y-2">
+      <Chart def={def} buf={buf} version={version} hover={hi} onHover={setHover} lang={lang} themeId={themeId} timeLabel={`t ({u})`} />
+      <p className="min-h-5 text-sm tabular-nums" aria-live="polite">
+        {hi !== null && (
+          <>
+            t = {fmt(buf.data.t[hi]! / tu.div, lang, 1)} {tu.label}&ensp; Eₖ = {fmtSci(buf.data.ek[hi]!, lang)} J&ensp; Eₚ ={' '}
+            {fmtSci(buf.data.ep[hi]!, lang)} J&ensp; E = {fmtSci(buf.data.ek[hi]! + buf.data.ep[hi]!, lang)} J
+          </>
+        )}
+      </p>
       <p className="text-sm text-(--muted)">{drag ? t.gEnergyNoteDrag : t.gEnergyNote.replace('E_k', 'Eₖ').replace('E_p', 'Eₚ')}</p>
-    </div>
-  );
-}
-
-function DataTable({ buf, lang }: { buf: SampleBuffer; lang: Lang }) {
-  const n = buf.length;
-  const rows = Array.from({ length: Math.min(12, n) }, (_, k) => Math.round((k * (n - 1)) / Math.max(1, Math.min(12, n) - 1)));
-  const tu = timeUnit(buf.data.t[n - 1]!, lang);
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-right text-sm tabular-nums">
-        <thead className="text-(--muted)">
-          <tr>
-            <th className="py-1 pr-2 font-normal">t ({tu.label})</th>
-            <th className="py-1 pr-2 font-normal">h (km)</th>
-            <th className="py-1 pr-2 font-normal">v (km/s)</th>
-            <th className="py-1 pr-2 font-normal">Eₖ (J)</th>
-            <th className="py-1 pr-2 font-normal">Eₚ (J)</th>
-            <th className="py-1 font-normal">E (J)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((i) => (
-            <tr key={i} className="border-t border-(--line)">
-              <td className="py-1 pr-2">{fmt(buf.data.t[i]! / tu.div, lang, 1)}</td>
-              <td className="py-1 pr-2">{fmt(buf.data.h[i]! / 1000, lang, 1)}</td>
-              <td className="py-1 pr-2">{fmt(buf.data.v[i]! / 1000, lang, 3)}</td>
-              <td className="py-1 pr-2">{fmtSci(buf.data.ek[i]!, lang)}</td>
-              <td className="py-1 pr-2">{fmtSci(buf.data.ep[i]!, lang)}</td>
-              <td className="py-1">{fmtSci(buf.data.ek[i]! + buf.data.ep[i]!, lang)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

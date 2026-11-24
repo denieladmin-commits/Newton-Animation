@@ -29,6 +29,8 @@ export const maxLaunchSpeed = (p: LaunchParams) =>
   Math.ceil((1.3 * escapeSpeed(BODIES[p.bodyId], BODIES[p.bodyId].radius + p.altitude)) / 500) * 500;
 
 interface Props {
+  advancedOpen: boolean;
+  onAdvanced: (open: boolean) => void;
   /** Energy bars, rendered between the drag and vector sections. */
   energy: React.ReactNode;
   params: LaunchParams;
@@ -91,15 +93,21 @@ export function ControlsPanel(props: Props) {
         </button>
       </div>
 
-      <Section title={t.body}>
+      <Section title={t.speed}>
         <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(BODIES) as BodyId[]).map((id) => (
-            <button key={id} className={chip(params.bodyId === id)} onClick={() => props.onParams({ bodyId: id })}>
-              {t.bodies[id]}
+          {WARP_PRESETS.map((w, i) => (
+            <button key={w} className={`${chip(warp === w)} px-1`} onClick={() => props.onWarp(w)} title={`${i + 1}`}>
+              {fmt(w, lang, 0)}×
             </button>
           ))}
         </div>
+        <p className="text-sm text-(--muted)">1× = {t.realTime}</p>
       </Section>
+
+
+      <p className="text-[15px]">
+        {t.body}: <span className="font-semibold">{t.bodies[params.bodyId]}</span>
+      </p>
 
       <Section title={t.altitude} aside={<span className="text-[15px]">h = {fmt(params.altitude / 1000, lang, params.altitude < 10_000 ? 2 : 0)} km</span>}>
         <input
@@ -159,7 +167,7 @@ export function ControlsPanel(props: Props) {
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1">
-            {[-100, -10, 10, 100].map((d) => (
+            {[-100, 100].map((d) => (
               <button
                 key={d}
                 className={`${chip(false)} min-w-11 px-2 text-sm`}
@@ -177,6 +185,28 @@ export function ControlsPanel(props: Props) {
         </p>
       </Section>
 
+      <Section title={t.energy} aside={<span className="text-sm text-(--muted)">{t.energyBall}</span>}>
+        {props.energy}
+      </Section>
+
+      <details className="group rounded-xl border border-(--line)" open={props.advancedOpen} onToggle={(e) => props.onAdvanced((e.target as HTMLDetailsElement).open)}>
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-[15px] font-semibold">
+          {t.advanced}
+          <span className="text-(--muted) transition-transform group-open:rotate-180" aria-hidden>
+            ▾
+          </span>
+        </summary>
+        <div className="space-y-6 px-4 pt-2 pb-4">
+      <Section title={t.body}>
+        <div className="grid grid-cols-3 gap-2">
+          {(Object.keys(BODIES) as BodyId[]).map((id) => (
+            <button key={id} className={chip(params.bodyId === id)} onClick={() => props.onParams({ bodyId: id })}>
+              {t.bodies[id]}
+            </button>
+          ))}
+        </div>
+      </Section>
+
       <Section title={t.drag}>
         <div className="grid grid-cols-2 gap-2">
           <button className={chip(!params.drag || !body.atmosphere)} onClick={() => props.onParams({ drag: false })} disabled={!body.atmosphere}>
@@ -187,10 +217,6 @@ export function ControlsPanel(props: Props) {
           </button>
         </div>
         <p className="text-sm text-(--muted)">{body.atmosphere ? t.dragNote : t.dragNoAtmosphere}</p>
-      </Section>
-
-      <Section title={t.energy} aside={<span className="text-sm text-(--muted)">{t.energyBall}</span>}>
-        {props.energy}
       </Section>
 
       <Section title={t.vectors}>
@@ -213,17 +239,6 @@ export function ControlsPanel(props: Props) {
         </p>
       </Section>
 
-      <Section title={t.speed}>
-        <div className="grid grid-cols-5 gap-1.5">
-          {WARP_PRESETS.map((w, i) => (
-            <button key={w} className={`${chip(warp === w)} px-1`} onClick={() => props.onWarp(w)} title={`${i + 1}`}>
-              {fmt(w, lang, 0)}×
-            </button>
-          ))}
-        </div>
-        <p className="text-sm text-(--muted)">1× = {t.realTime}</p>
-      </Section>
-
       {/* On phones the style switch lives here instead of on the canvas. */}
       <div className="sm:hidden">
         <Section title={t.theme}>
@@ -236,6 +251,9 @@ export function ControlsPanel(props: Props) {
           </div>
         </Section>
       </div>
+
+        </div>
+      </details>
 
       <button onClick={props.onClear} disabled={!hasShot} className={`${chip(false)} w-full`}>
         {t.clearShots}

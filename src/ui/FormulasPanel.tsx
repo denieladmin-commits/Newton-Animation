@@ -4,7 +4,7 @@ import { bodyMass, G, type Body } from '../physics/bodies';
 import { fmt, texNum, type Lang } from '../i18n/format';
 import { useLang, useT } from '../i18n';
 import { sym, type SymbolId } from '../i18n/notation';
-import { GlossaryList, SymbolPopover } from './Glossary';
+import { SymbolPopover } from './Glossary';
 import { BALL_MASS } from '../sim/simulation';
 import type { ThemeId } from '../theme/themes';
 
@@ -25,7 +25,7 @@ interface Props {
   themeId: ThemeId;
 }
 
-function Step({ title, children }: { title: string; children: React.ReactNode }) {
+export function Step({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2.5 border-b border-(--line) pb-5 last:border-b-0">
       <h3 className="text-[15px] font-semibold">{title}</h3>
@@ -127,9 +127,6 @@ export function FormulasPanel({ body, r0, altitude, r, v, themeId }: Props) {
         )}
       </Step>
 
-      <Step title={t.glossary}>
-        <GlossaryList />
-      </Step>
 
       {popover && <SymbolPopover {...popover} onClose={() => setPopover(null)} />}
     </div>

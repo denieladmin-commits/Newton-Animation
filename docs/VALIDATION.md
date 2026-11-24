@@ -55,7 +55,6 @@ in the browser and show them in Hungarian.*
 | 26 | Energy bars never exceed their fixed scale (60 random launches, all planets, drag on/off) | — | property test |
 | 27 | 10 kg ball, circular orbit at 400 km | E_k = 2,94·10⁸ J, E_p = −5,89·10⁸ J, E = −E_k | 3 significant figures |
 | 28 | Graph samples: at most 2048 points, evenly thinned, first point kept | — | unit test |
-| 29 | Lesson 1: 4,0 km/s from 400 km not solved; 7,3 km/s solved with range 7384 km | — | 0,5 km |
-| 30 | Lesson 2 figure: first second at v₁ from 8,85 km — 7,90 km forward, 4,90 m drop = surface curvature | — | 1 cm |
-| 31 | Lesson 3: circular orbit recognised after one revolution, measured T within 0,1 % of Kepler; an ellipse is not | — | — |
-| 32 | Lesson 4: escape recognised for 1,05·v₂, not for 0,98·v₂ | — | — |
+
+## In-app Ellenőrzés page
+Eight of the checks above also run live in the browser (src/verify/checks.ts, tested in src/verify/__tests__): v₁ at the surface (with one simulated orbit), the 1-second fall, the ISS period, v₂ = √2·v₁ with E = 0, energy over 10 orbits, the sub-orbital landing point, the direction of gravity, and air density at 9 km against the U.S. Standard Atmosphere 1976 (0,46706 kg/m³; not a table point of the model, so it tests the interpolation).

@@ -32,11 +32,17 @@ function EntryBody({ id }: { id: SymbolId }) {
   );
 }
 
+/**
+ * Symbols that actually appear on screen (formulas, arrows, status box, energy bars).
+ * The full list, including g and a_cp, is in docs/TANARI_MEGJEGYZESEK.md.
+ */
+export const ON_SCREEN: SymbolId[] = ['F', 'G', 'M', 'm', 'R', 'h', 'r', 'v0', 'v', 'vr', 'vt', 'v1', 'v2', 'Fcp', 'Fd', 'Ek', 'Ep', 'E', 'W', 'T', 'eps'];
+
 export function GlossaryList() {
   const lang = useLang();
   return (
     <dl className="space-y-4">
-      {(Object.keys(NOTATION) as SymbolId[]).map((id) => (
+      {ON_SCREEN.map((id) => (
         <div key={id} id={`sym-${id}`} className="grid grid-cols-[3rem_1fr] gap-x-3">
           <dt className="pt-0.5 text-lg">
             <Formula tex={NOTATION[id].tex} />

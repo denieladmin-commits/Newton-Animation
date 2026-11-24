@@ -6,10 +6,8 @@ import type { SceneLabels, SceneOptions } from './render/scene';
 import { THEMES, type ThemeId } from './theme/themes';
 import { energies, Simulation, WARP_PRESETS, type LaunchParams, type Warp } from './sim/simulation';
 import { EnergyBars, energyScale } from './ui/EnergyBars';
-import { FormulasPanel } from './ui/FormulasPanel';
-import { GraphsPanel } from './ui/GraphsPanel';
-import { LessonPanel } from './ui/LessonPanel';
-import type { LessonSetup } from './sim/lessons';
+import { PhysicsPanel } from './ui/PhysicsPanel';
+import { VerificationPage } from './ui/VerificationPage';
 import { fmt, fmtDistance, fmtDuration, type Lang } from './i18n/format';
 import { LangContext } from './i18n';
 import { STRINGS } from './i18n/strings';
@@ -19,7 +17,7 @@ import { ControlsPanel, maxLaunchSpeed, type SpeedSnap } from './ui/ControlsPane
 const INITIAL: LaunchParams = { bodyId: 'earth', altitude: 8_850, v0: 6_000, drag: false };
 /** Pixels kept free at the top of the canvas for the status box. */
 const HUD_SPACE = 96;
-type Tab = 'controls' | 'formulas' | 'graphs' | 'lesson';
+type Tab = 'controls' | 'physics';
 
 interface Telemetry {
   t: number;
@@ -111,6 +109,9 @@ export default function App() {
   /** Presentation mode: only the picture, larger labels (H). */
   const [present, setPresent] = useState(false);
   const [showKeys, setShowKeys] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  /** The teacher's Ellenőrzés page; also opened by #ellenorzes in the address. */
+  const [verify, setVerify] = useState(() => typeof location !== 'undefined' && location.hash === '#ellenorzes');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [themeId, setThemeId] = useState<ThemeId>(() => {
     try {
@@ -256,18 +257,6 @@ export default function App() {
     setFollow(false);
   }, [sim]);
 
-  /** Lesson "set it up for me": planet, height, speed and time warp, with old shots cleared. */
-  const applySetup = useCallback(
-    (ls: LessonSetup) => {
-      clear();
-      if (ls.v0 === 'v1') setParams({ bodyId: ls.bodyId, altitude: ls.altitude, drag: false }, 'v1');
-      else setParams({ bodyId: ls.bodyId, altitude: ls.altitude, drag: false, v0: ls.v0 }, 'free');
-      setWarp(ls.warp);
-      fitPlanet();
-    },
-    [clear, setParams, setWarp, fitPlanet],
-  );
-
   const zoom = useCallback((f: number) => camera.zoomAt(camera.width / 2, camera.height / 2, f), [camera]);
 
   useEffect(() => {
@@ -297,7 +286,7 @@ export default function App() {
         e.preventDefault();
         togglePlay();
       } else if (e.key === 'Enter' && el.tagName !== 'BUTTON') fire();
-      else if (e.key >= '1' && e.key <= '5') setWarp(WARP_PRESETS[Number(e.key) - 1]!);
+      else if (e.key >= '1' && e.key <= String(WARP_PRESETS.length)) setWarp(WARP_PRESETS[Number(e.key) - 1]!);
       else if (e.key === '+' || e.key === '=') zoom(1.5);
       else if (e.key === '-' || e.key === '_') zoom(1 / 1.5);
       else if (e.key === '0') fitAll();
@@ -310,6 +299,7 @@ export default function App() {
       else if (e.key === 'Escape') {
         setShowKeys(false);
         setPresent(false);
+        setVerify(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -329,11 +319,9 @@ export default function App() {
               ? t.flying
               : t.paused;
 
-  const tabs: [Tab, string, string][] = [
-    ['controls', t.tabControls, t.tabControls],
-    ['formulas', t.tabFormulas, t.tabFormulas],
-    ['graphs', t.tabGraphs, t.tabGraphs],
-    ['lesson', t.tabLesson, t.tabLessonShort],
+  const tabs: [Tab, string][] = [
+    ['controls', t.tabControls],
+    ['physics', t.tabPhysics],
   ];
   const overlayBtn =
     'grid h-11 min-w-11 place-items-center rounded-xl border border-(--overlay-line) bg-(--overlay-bg) px-2 text-lg text-(--overlay-ink) backdrop-blur-sm hover:brightness-125 focus-visible:outline-2 focus-visible:outline-(--chip-on-line)';
@@ -438,7 +426,7 @@ export default function App() {
             </h1>
           </header>
           <nav className="flex gap-1 overflow-x-auto border-b border-(--line) px-3 pt-2 lg:px-5 lg:pt-3" role="tablist">
-            {tabs.map(([id, label, short]) => (
+            {tabs.map(([id, label]) => (
               <button
                 key={id}
                 id={`tab-${id}`}
@@ -448,14 +436,15 @@ export default function App() {
                 onClick={() => setTab(id)}
                 className={`-mb-px min-h-11 shrink-0 border-b-2 px-3 text-sm ${tab === id ? 'border-(--chip-on-line) font-semibold' : 'border-transparent text-(--muted) hover:text-(--ink)'}`}
               >
-                <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{short}</span>
+                {label}
               </button>
             ))}
           </nav>
           <div id="tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 overflow-y-auto p-4 lg:px-6 lg:py-5">
             {tab === 'controls' ? (
               <ControlsPanel
+                advancedOpen={advancedOpen}
+                onAdvanced={setAdvancedOpen}
                 energy={
                   <EnergyBars
                     ek={tele.ek}
@@ -482,34 +471,22 @@ export default function App() {
                 onTogglePlay={togglePlay}
                 onClear={clear}
               />
-            ) : tab === 'formulas' ? (
-              <FormulasPanel
+            ) : (
+              <PhysicsPanel
+                sim={sim}
                 body={sim.body}
                 r0={sim.body.radius + (sim.current?.params.altitude ?? params.altitude)}
                 altitude={sim.current?.params.altitude ?? params.altitude}
                 r={tele.r}
                 v={tele.speed}
                 themeId={themeId}
-              />
-            ) : tab === 'graphs' ? (
-              <GraphsPanel sim={sim} themeId={themeId} />
-            ) : (
-              <LessonPanel
-                sim={sim}
-                onSetup={applySetup}
-                v0={params.v0}
-                onV0={(v) => setParams({ v0: Math.min(v, maxLaunchSpeed(params)) }, 'free')}
-                onFire={fire}
+                onVerify={() => setVerify(true)}
               />
             )}
           </div>
-          <footer className="hidden border-t border-(--line) px-6 py-2 lg:block">
-            <button className="min-h-9 text-sm text-(--muted) underline underline-offset-4 hover:text-(--ink)" onClick={() => setShowKeys(true)}>
-              {t.keysButton}
-            </button>
-          </footer>
         </aside>
       </div>
+      {verify && <VerificationPage onClose={() => setVerify(false)} />}
       {showKeys && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setShowKeys(false)}>
           <div
