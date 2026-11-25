@@ -36,7 +36,7 @@ in the browser and show them in Hungarian.*
 | 9b | Range shown in the app, from 400 km: 4,0 / 6,0 / 7,0 / 7,3 km/s | 1382 / 2856 / 5171 / 7384 km | 0,5 km |
 | 10 | Free fall from 100 km | closed-form fall time | 10⁻⁶ |
 | 11 | Total energy at exactly v₂ | 0 | 10⁻¹² |
-| 12 | 1,001·v₂ escapes; 0,999·v₂ stays bound | — | — |
+| 12 | v₂ and 1,001·v₂ escape (declared at 10 R with E ≥ 0, moving outward; < 60 s at 500×); 0,999·v₂ stays bound | — | — |
 | 13 | Energy and angular momentum without drag | constant | < 10⁻⁸ per orbit (measured ≈ 6·10⁻¹⁴ over 10 orbits) |
 | 14 | Halving the time step | error ÷ 16 (4th-order method) | ratio 13–19 |
 | 15 | With drag: energy only decreases; loss = work done by drag | balance | 10⁻⁶ |

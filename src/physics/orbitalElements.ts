@@ -73,6 +73,9 @@ export function elementsFromState(s: PlanarState, GM: number): Elements {
   return { energy, h, e, periapsisAngle, p, a, periapsis, apoapsis, period, trueAnomaly };
 }
 
+/** Relative tolerance for "total energy is zero" (rounding of v₂ = √(2GM/r)). */
+export const ENERGY_TOLERANCE = 1e-9;
+
 export type TrajectoryKind = 'suborbital' | 'circular' | 'elliptical' | 'escape';
 
 /**
@@ -81,7 +84,8 @@ export type TrajectoryKind = 'suborbital' | 'circular' | 'elliptical' | 'escape'
  */
 export function classifyTrajectory(s: PlanarState, body: Body): TrajectoryKind {
   const el = elementsFromState(s, body.GM);
-  if (el.energy >= 0) return 'escape';
+  // E = 0 exactly (fired at v₂) is a parabola: it escapes. Allow for rounding.
+  if (el.energy >= -ENERGY_TOLERANCE * (body.GM / Math.hypot(s.x, s.y))) return 'escape';
   if (el.periapsis < body.radius) return 'suborbital';
   if (el.e < 0.002) return 'circular';
   return 'elliptical';

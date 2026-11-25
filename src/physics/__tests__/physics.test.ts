@@ -193,6 +193,17 @@ describe('second cosmic (escape) velocity', () => {
     expect(Math.abs(specificEnergy(f.launch, earth)) / (earth.GM / r0)).toBeLessThan(1e-12);
   });
 
+  it('fired at exactly v₂ (the v₂ button) the ball escapes, within ~1 min at 500×', () => {
+    for (const id of ['earth', 'moon', 'mars'] as const) {
+      const b = BODIES[id];
+      const f = createFlight({ body: b, altitude: 400_000, v0: escapeSpeed(b, b.radius + 400_000), drag: false });
+      expect(classifyTrajectory(f.launch, b)).toBe('escape');
+      const events = run(f, 1e6);
+      expect(events.some((e) => e.type === 'escape')).toBe(true);
+      expect(f.state.t / 500).toBeLessThan(60);
+    }
+  });
+
   it('just above v₂ the ball escapes; just below, it stays bound', () => {
     const fast = createFlight({ body: earth, altitude: EVEREST, v0: 1.001 * v2, drag: false });
     const events = run(fast, 1e7);

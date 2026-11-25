@@ -93,7 +93,7 @@ A nullszintet a végtelen távolban vesszük fel. A gravitáció vonzó erő, ez
 Ekkor a gravitáció nem elég ahhoz, hogy körpályán tartsa a golyót, ezért távolodik, közben lassul, majd visszafordul: ez az ellipszis. A kilövési pont a bolygóhoz legközelebbi pont lesz. Ha v₀ kisebb v₁-nél, a kilövési pont a legtávolabbi pont, és a golyó becsapódik, mert az ellipszis belemetsz a bolygóba.
 
 **20. Mi történik pontosan v₂-nél?**
-A pálya parabola, a golyó soha nem tér vissza. v₂ felett hiperbola. Az alkalmazás akkor jelzi az elszökést, amikor a golyó a bolygó sugarának 30-szorosánál messzebb van, és az összenergiája nem negatív.
+A pálya parabola, a golyó soha nem tér vissza. v₂ felett hiperbola. Az alkalmazás akkor jelzi az elszökést, amikor a golyó összenergiája nem negatív, kifelé halad, és már a bolygó sugarának 10-szeresénél messzebb van. Ilyenkor a golyó biztosan soha nem tér vissza, ezért ez nem közelítés. Pontosan v₂-vel lőve (E = 0, parabolapálya) is elszökik; 500×-os sebességen ez kb. fél perc.
 
 **21. A gyorsítás (100×, 500×) megváltoztatja a fizikát?**
 Nem. A gyorsítás csak azt szabja meg, hogy a valós idő egy másodperce alatt mennyi szimulált idő telik el. A számítás lépésköze a pálya alakjához igazodik, nem a gyorsításhoz, ezért minden sebességen ugyanazt a pályát kapjuk. 1× sebességen a szimuláció valós idejű.

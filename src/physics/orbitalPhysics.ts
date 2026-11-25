@@ -12,6 +12,7 @@
  */
 import { airDensity, type Body } from './bodies';
 import { sphereDragCoefficient } from './atmosphere';
+import { ENERGY_TOLERANCE } from './orbitalElements';
 
 /** Simulation state. `w` is the work done by drag per unit mass (J/kg, ≤ 0). */
 export interface State {
@@ -218,7 +219,8 @@ export function createFlight(config: LaunchConfig): Flight {
     swept: 0,
     orbitsCompleted: 0,
     measuredPeriod: null,
-    escapeRadius: 30 * config.body.radius,
+    // A ball with E ≥ 0 moving outward never returns; 10 R is just where we say so.
+    escapeRadius: 10 * config.body.radius,
   };
 }
 
@@ -292,7 +294,7 @@ export function advanceFlight(
 
     if (
       radius(next) > flight.escapeRadius &&
-      specificEnergy(next, env.body) >= 0 &&
+      specificEnergy(next, env.body) >= -ENERGY_TOLERANCE * (env.body.GM / radius(next)) &&
       velocityComponents(next).vr > 0
     ) {
       flight.status = 'escaped';
